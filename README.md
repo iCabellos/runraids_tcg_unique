@@ -18,53 +18,48 @@ Bienvenidos a un épico juego de cartas cooperativo PvE donde la mitología cobr
 
 🎯 Características Destacadas
 
-✅ Cooperación: Peleas en equipo de 3 jugadores.
-✅ Recompensas: Obtén héroes y cartas con dos tipos de moneda.
-✅ Sistema de rarezas:
-
-🃏 Cartas con distintas rarezas que afectan su poder.
-
-🃏 La misma carta puede existir en diferentes rarezas (de Común a Épica).
-
-🃏 Cartas Legendarias ÚNICAS asociadas a un Dios.
-
-✅ Dioses Legendarios o Míticos: Los Míticos son los más poderosos.
-✅ ¡SHINYYYYY!!!?: ¡Cartas especiales con efectos únicos!
+- ✅ Cooperación: Peleas en equipo de 3 jugadores.
+- ✅ Recompensas: Obtén héroes y cartas con dos tipos de moneda.
+- ✅ Sistema de rarezas:
+- 🃏 Cartas con distintas rarezas que afectan su poder.
+- 🃏 La misma carta puede existir en diferentes rarezas (de Común a Épica).
+- 🃏 Cartas Legendarias ÚNICAS asociadas a un Dios.
+- ✅ Dioses Legendarios o Míticos: Los Míticos son los más poderosos.
+- ✅ ¡SHINYYYYY!!!?: ¡Cartas especiales con efectos únicos!
 
 🎮 Cómo se Juega
 
-⚔️ Sistema de RNG atmosférico: El clima influirá en las unidades del campo de batalla.
-⚔️ Tablero de casillas: Las unidades avanzan y combaten en un campo dividido.
-⚔️ Sistema de maná competitivo: Administra recursos estratégicamente.
-⚔️ Intercambio de cartas: Las cartas ÚNICAS juegan un papel crucial en la estrategia.
+- ⚔️ Sistema de RNG atmosférico: El clima influirá en las unidades del campo de batalla.
+
+- ⚔️ Tablero de casillas: Las unidades avanzan y combaten en un campo dividido.
+
+- ⚔️ Sistema de maná competitivo: Administra recursos estratégicamente.
+
+- ⚔️ Intercambio de cartas: Las cartas ÚNICAS juegan un papel crucial en la estrategia.
 
 📌 TODOs - Desarrollo en Proceso
 
-✔️ Clases y pequeños algoritmos ✅
+- ✔️ Clases y pequeños algoritmos
+- ✔️ BBDD
+- ✔️ Login
+- ✔️ Sistema Admin
+- ✔️ Creación de Cartas
+- ❌ Algoritmo para las cartas ÚNICAS
+- ❌ Mostrar la colección personal
+- ❌ Obtener un sobre cada 8h
+- ✔️ Sistema de piti
+- ❌ Sistema de combates
+- ❌ Implementación del RNG del clima
+- ❌ Intercambio de cartas
+- ❌ Creación del arte/cartas con arte shiny
 
-✔️ BBDD ✅
+=================================
 
-✔️ Login ✅
+Fase Final (versión v0.1)
 
-✔️ Sistema Admin ✅
-
-✔️ Creación de Cartas ✅
-
-❌ Algoritmo para las cartas ÚNICAS
-
-❌ Mostrar la colección personal
-
-❌ Obtener un sobre cada 8h
-
-✔️ Sistema de piti ✅
-
-❌ Sistema de combates
-
-❌ Implementación del RNG del clima
-
-❌ Intercambio de cartas
-
-❌ Creación del arte/cartas con arte shiny
+- ❌ Algoritmos para los combates
+- ❌ Fases de pruebas
+- ❌ Corrección errores
 
 👨‍💻 Desarrolladores
 
