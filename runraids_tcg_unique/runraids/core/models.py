@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.utils.timezone import now
@@ -24,11 +26,12 @@ class Member(models.Model):
 
 class Coin(models.Model):
     id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=150, null=True, blank=True)
     created_at = models.DateTimeField(default=now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return 'Coin: {id}'.format(id=self.id)
+        return 'Coin: {id}, {name}'.format(id=self.id, name=self.name)
 
 
 class MemberCoin(models.Model):
@@ -36,11 +39,26 @@ class MemberCoin(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     coin = models.ForeignKey(Coin, on_delete=models.CASCADE)
     amount_coin = models.IntegerField()
+    total_amount_coin = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(default=now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return 'Member Coins Owned: {id}'.format(id=self.id)
+        return 'Member Coins Owned: {id_mamber}, {coin}, quantity: {amount}, total: {total}'.format(
+            id_mamber=self.member,
+            coin=self.coin,
+            amount=self.amount_coin, total=self.total_amount_coin)
+
+    def save(self, *args, **kwargs):
+        previous_total = MemberCoin.objects.filter(
+            member=self.member,
+            coin=self.coin
+        ).exclude(pk=self.pk).aggregate(models.Sum('amount_coin'))['amount_coin__sum'] or 0
+
+        # Sumar el nuevo amount_coin
+        self.total_amount_coin = previous_total + self.amount_coin
+
+        super().save(*args, **kwargs)
 
 
 class Collection(models.Model):
@@ -134,7 +152,7 @@ class Card(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return 'Card: {id}, {name}'.format(id=self.id, name=self.name_card)
+        return 'Card: {id}, {name}, {rarity}'.format(id=self.id, name=self.name_card, rarity=self.rarity_card)
 
 
 class MemberCollection(models.Model):
@@ -148,6 +166,17 @@ class MemberCollection(models.Model):
         return 'Member Collection: {id}'.format(id=self.id)
 
 
+class CollectionCard(models.Model):
+    id = models.AutoField(primary_key=True)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    card = models.ForeignKey(Card, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return 'Collection: {id}, Card Name: {deck}'.format(id=self.collection.id, deck=self.card)
+
+
 class CollectionDeck(models.Model):
     id = models.AutoField(primary_key=True)
     collection = models.ForeignKey(Member, on_delete=models.CASCADE)
@@ -156,17 +185,70 @@ class CollectionDeck(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return 'Collection: {id}, Deck Name: {deck}'.format(id=self.collection_id.id, deck=self.deck_id.name_deck)
+        return 'Collection: {id}, Deck Name: {deck}'.format(id=self.collection.id, deck=self.deck.name_deck)
 
 
 class Booster(models.Model):
     id = models.AutoField(primary_key=True)
+    set_booster = models.ForeignKey(Set, on_delete=models.CASCADE, null=True)
     name_booster = models.CharField(max_length=255)
+    quantity_of_cards = models.IntegerField(blank=False, null=False, default=1)
+    cost = models.IntegerField(blank=True, null=False, default=0)
     created_at = models.DateTimeField(default=now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return '{}'.format(self.name_booster)
+
+    def open_booster(self, set, member):
+        money = MemberCoin.objects.filter(member=member, coin=2).last().total_amount_coin
+        if money >= self.cost:
+            new_total_amount = MemberCoin()
+            new_total_amount.member = Member.objects.filter(id=member).last()
+            new_total_amount.coin = Coin.objects.filter(id=2).last()
+            new_total_amount.amount_coin = -200
+            new_total_amount.save()
+
+            member_logged = Member.objects.filter(id=member).first()
+            if not member_logged:
+                return None
+
+            member_collection = MemberCollection.objects.filter(member=member_logged).first()
+
+            if not member_collection:
+                new_collection = Collection.objects.create()
+                new_member_collection = MemberCollection.objects.create(member=member_logged, collection=new_collection)
+                member_collection = new_member_collection
+
+            collection = member_collection.collection
+            all_cards_list = Card.objects.filter(set_card=set)
+
+            cards_opened = []
+
+            for i in range(self.quantity_of_cards):
+                if i == 2 and random.randint(1, 100) <= 2:
+                    epic_cards = all_cards_list.filter(rarity_card=3)
+                    if epic_cards.exists():
+                        random_card = random.choice(list(epic_cards))
+                else:
+                    rare_cards = all_cards_list.filter(rarity_card=2) if i == 2 else all_cards_list.filter(
+                        rarity_card=1)
+                    if rare_cards.exists():
+                        random_card = random.choice(list(rare_cards))
+
+                if random_card:
+                    CollectionCard.objects.create(collection=collection, card=random_card)
+                    cards_opened.append(random_card)
+
+            return {
+                'ok': True,
+                'cards': cards_opened
+            }
+        else:
+            return {
+                'ok': False,
+                'cards': []
+            }
 
 
 class MemberBooster(models.Model):

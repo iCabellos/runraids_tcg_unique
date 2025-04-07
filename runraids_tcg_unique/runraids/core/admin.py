@@ -1,6 +1,6 @@
 from django.contrib import admin
 from core.models import Member, Coin, MemberCoin, Card, Deck, Collection, CollectionDeck, Attack, Ability, Rarity, \
-    MemberCollection, Booster, MemberBooster, Hero, Set
+    MemberCollection, Booster, MemberBooster, CollectionCard, Hero, Set
 
 
 @admin.register(Member)
@@ -75,4 +75,9 @@ class CollectionDeckAdmin(admin.ModelAdmin):
 
 @admin.register(MemberCollection)
 class MemberCollectionAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(CollectionCard)
+class CollectionCardAdmin(admin.ModelAdmin):
     pass

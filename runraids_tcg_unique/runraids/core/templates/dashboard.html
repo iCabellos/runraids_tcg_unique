@@ -6,8 +6,30 @@
 <section id="welcome" class="py-5 text-light">
     <div class="container">
         <h2>Wellcome {{ member.name }}</h2>
+        {% for booster in boosters %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="booster_id" value="{{ booster.id }}">
+            <button type="submit" style="color: RED">OPEN BOOSTER {{ booster.name_booster }}</button>
+        </form>
+        {% endfor %}
         <hr class="w-25 border-light">
-        <p>¡Logged!</p>
+        {% if opened_cards.ok %}
+        {% for card in opened_cards.cards %}
+        {% if card.rarity_card.id == 1 %}
+        <p>{{ card.name_card }}</p>
+        {% elif card.rarity_card.id == 2 %}
+        <p style="color: blue">{{ card.name_card }}</p>
+        {% elif card.rarity_card.id == 3 %}
+        <p style="color: purple">{{ card.name_card }}</p>
+        {% endif %}
+        {% endfor %}
+        {% else %}
+        <p>Ereh mileurista</p>
+        <p><b>PAGA</b>, POBRE</p>
+        <img class="col-12" src="https://statics.memondo.com/p/99/crs/2013/06/CR_836982_d430b6c1de3144039b9d7411b7ce83b4_rendirse.jpg?cb=1310521"
+             width="50" height="auto"/>
+        {% endif %}
         <a href="{% url 'logout' %}" class="btn btn-danger">Log out</a>
     </div>
 </section>
