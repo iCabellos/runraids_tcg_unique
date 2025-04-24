@@ -123,7 +123,7 @@ class ShopView(TemplateView):
 
         booster_id = request.POST.get("booster_id")
         booster = get_object_or_404(Booster, id=booster_id)
-        opened = booster.open_booster(booster.set_booster, member)
+        opened = booster.open_wish(booster.set_booster, member)
         opened_cards = opened["cards"] if opened["ok"] else []
 
         serialized_cards = json.dumps([
@@ -141,9 +141,9 @@ class ShopView(TemplateView):
                     'description_ability': card.ability_card.description_ability,
                 },
                 'attack_card': {
-                    'id': card.attack_card.id,
-                    'name_atk': card.attack_card.name_atk,
-                    'description_atk': card.attack_card.description_atk,
+                    'id': card.attack_hero.id,
+                    'name_atk': card.attack_hero.name_atk,
+                    'description_atk': card.attack_hero.description_atk,
                 },
             }
             for card in opened_cards
