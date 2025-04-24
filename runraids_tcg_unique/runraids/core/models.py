@@ -67,7 +67,7 @@ class Collection(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return 'ID: {id}'.format(id=self.id)
+        return 'Collection ID: {id}'.format(id=self.id)
 
 
 class Deck(models.Model):
@@ -140,6 +140,7 @@ class Attack(models.Model):
 
 class Card(models.Model):
     id = models.AutoField(primary_key=True)
+    image = models.ImageField(upload_to='cards/', default='cards/default.jpg')
     name_card = models.CharField(max_length=255)
     hp_card = models.IntegerField()
     cost_card = models.IntegerField()
@@ -201,12 +202,12 @@ class Booster(models.Model):
         return '{}'.format(self.name_booster)
 
     def open_booster(self, set, member):
-        money = MemberCoin.objects.filter(member=member, coin=2).last().total_amount_coin
-        if money >= self.cost:
+        money = MemberCoin.objects.filter(member=member, coin=2).last()
+        if money.total_amount_coin >= self.cost:
             new_total_amount = MemberCoin()
             new_total_amount.member = Member.objects.filter(id=member).last()
             new_total_amount.coin = Coin.objects.filter(id=2).last()
-            new_total_amount.amount_coin = -200
+            new_total_amount.amount_coin = self.cost
             new_total_amount.save()
 
             member_logged = Member.objects.filter(id=member).first()

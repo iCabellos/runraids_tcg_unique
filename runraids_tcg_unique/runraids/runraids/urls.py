@@ -16,12 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 
-from core.views import IndexView, DashboardView, logout_view
+from core.views import IndexView, DashboardView, CollectionView, ShopView, logout_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', IndexView.as_view(), name="index"),
     path('userprofile/', DashboardView.as_view(), name="userprofile"),
+    path('userprofile/collection', CollectionView.as_view(), name="collection"),
+    path('userprofile/shop', ShopView.as_view(), name="shop"),
     path('logout/', logout_view, name="logout"),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

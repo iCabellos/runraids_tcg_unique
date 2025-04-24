@@ -1,0 +1,252 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ member.name }} - Collection{% endblock %}
+
+{% block content %}
+<h2>Shop</h2>
+<hr class="w-25 border-light">
+<nav class="navbar navbar-expand-lg col-12">
+    <div class="col-12">
+        <div class="justify-content-center" id="mainNavbar">
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'collection' %}" style="color: white">Collection</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'shop' %}" style="color: white">Shop</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#pase-recompensas" style="color: white">Reward System</a>
+                </li>
+                <li class="nav-item justify-content-center">
+                    <a class="nav-link btn btn-danger bg-danger text-white fw-bold"
+                       href="#combatir" style="color: white">¡MATCH!</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<hr class="w-25 border-light">
+<!-- SHOP -->
+<div class="row">
+    <p class="col-6">{{ ar }}<img src="https://assets.stickpng.com/thumbs/60ae2ed3b91d4600046a9103.png"
+                                  alt="coin"
+                                  width="30px" height="30px"/></p>
+    <p class="col-6">{{ au }}<img src="https://assets.stickpng.com/thumbs/60ae2d69b91d4600046a90fb.png"
+                                  alt="coin"
+                                  width="30px" height="30px"/></p>
+</div>
+<!-- Boosters -->
+{% for booster in boosters %}
+<form method="post" class="mb-2">
+    {% csrf_token %}
+    <input type="hidden" name="booster_id" value="{{ booster.id }}">
+    <button type="submit" class="btn btn-outline-danger">OPEN BOOSTER {{ booster.name_booster }} ({{ booster.cost }}
+        <img src="https://assets.stickpng.com/thumbs/60ae2ed3b91d4600046a9103.png"
+             alt="coin"
+             width="30px" height="30px"/>)
+    </button>
+</form>
+{% endfor %}
+{% if booster_opened %}
+<div id="booster-overlay" class="d-none"></div>
+{% endif %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const boosterOpened = {{ booster_opened|yesno:"true,false" }};
+        const cards = boosterOpened ? JSON.parse('{{ opened_cards_json|escapejs }}') : [];
+
+        console.log("Cartas recibidas:", cards);
+
+        if (boosterOpened && cards.length > 0) {
+            const overlay = document.getElementById("booster-overlay");
+            overlay.classList.remove("d-none");
+
+            let index = 0;
+
+            function revealNextCard() {
+                if (index >= cards.length) {
+                    setTimeout(() => overlay.classList.add("d-none"), 4000);
+                    return;
+                }
+
+                const card = cards[index];
+                const container = document.createElement("div");
+                let rarityClass = "";
+                switch (card.rarity_card.id) {
+                    case 1: rarityClass = "common"; break;
+                    case 2: rarityClass = "uncommon"; break;
+                    case 3: rarityClass = "rare"; break;
+                    case 4: rarityClass = "epic"; break;
+                    case 5: rarityClass = "legendary"; break;
+                    default: rarityClass = "common"; break;
+                }
+                container.className = `card-reveal ${rarityClass}`;
+
+                container.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front"></div>
+                        <div class="card-back">
+                            <img src="${card.image.url}" style="width: 100%; height: 180px; object-fit: cover;"/>
+                            <h5 class="text-center mt-2">${card.name_card}</h5>
+                            <p class="small">HP: ${card.hp_card} - Cost: ${card.cost_card}</p>
+                            ${card.ability_card.id !== 14 ? `<p><strong>Ability:</strong> ${card.ability_card.name_ability}<br>${card.ability_card.description_ability}</p>` : ''}
+                            ${card.attack_card.id !== 5 ? `<p><strong>Attack:</strong> ${card.attack_card.name_atk}<br>${card.attack_card.description_atk}</p>` : ''}
+                            <p class="small mt-auto">${card.description_card}</p>
+                        </div>
+                    </div>
+                `;
+                overlay.appendChild(container);
+
+                setTimeout(() => {
+                    container.classList.add("flipped");
+                    index++;
+                    setTimeout(revealNextCard, 1000);
+                }, 800);
+            }
+
+            setTimeout(() => {
+                const sound = new Audio('https://cdn.pixabay.com/audio/2021/09/20/audio_0cb926fdde.mp3');
+                sound.play();
+                revealNextCard();
+            }, 500);
+        }
+    });
+</script>
+<style>
+    /* Fondo para efecto inmersivo */
+    #booster-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at center, #000 0%, #111 100%);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        animation: fadeIn 1s ease-out;
+    }
+
+    /* Animaciones */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes glow {
+        0%, 100% { box-shadow: 0 0 20px 5px gold; }
+        50% { box-shadow: 0 0 40px 10px orange; }
+    }
+
+    @keyframes flip {
+        0% { transform: rotateY(0); }
+        100% { transform: rotateY(180deg); }
+    }
+
+    .card-reveal {
+        width: 300px;
+        height: 420px;
+        perspective: 1000px;
+        margin: 20px;
+        position: relative;
+        animation: glow 1.5s infinite alternate;
+    }
+
+    .card-inner {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 1s;
+    }
+
+    .card-reveal.flipped .card-inner {
+        transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        backface-visibility: hidden;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+        overflow: hidden;
+    }
+
+    .card-front {
+        background: url('https://i.imgur.com/ZVZb0jU.png') center center no-repeat;
+        background-size: cover;
+    }
+
+    .card-back {
+        background: #111;
+        color: white;
+        transform: rotateY(180deg);
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+        .card-reveal.common {
+        animation: glow 1.5s infinite alternate;
+    }
+
+    .card-reveal.uncommon {
+        animation: glow-uncommon 1.5s infinite alternate;
+    }
+
+    .card-reveal.rare {
+        animation: glow-rare 1.5s infinite alternate;
+        transform: scale(1.05);
+    }
+
+    .card-reveal.epic {
+        animation: glow-epic 1.5s infinite alternate, shake 0.5s infinite;
+        transform: scale(1.1);
+    }
+
+    .card-reveal.legendary {
+        animation: glow-legendary 2s infinite alternate, bounce 1s infinite;
+        transform: scale(1.2);
+        border: 3px solid gold;
+    }
+
+    /* Efectos de glow personalizados */
+    @keyframes glow-uncommon {
+        0%, 100% { box-shadow: 0 0 10px 4px #00bfff; }
+        50% { box-shadow: 0 0 20px 8px #1e90ff; }
+    }
+
+    @keyframes glow-rare {
+        0%, 100% { box-shadow: 0 0 15px 6px #8a2be2; }
+        50% { box-shadow: 0 0 30px 12px #9932cc; }
+    }
+
+    @keyframes glow-epic {
+        0%, 100% { box-shadow: 0 0 20px 8px #ff8c00; }
+        50% { box-shadow: 0 0 40px 16px #ffa500; }
+    }
+
+    @keyframes glow-legendary {
+        0%, 100% { box-shadow: 0 0 25px 10px #ffd700; }
+        50% { box-shadow: 0 0 50px 20px #ffff00; }
+    }
+
+    /* Extras: vibración o rebote */
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+</style>
+{% endblock content %}

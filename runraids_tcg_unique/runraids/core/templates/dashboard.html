@@ -5,31 +5,31 @@
 {% block content %}
 <section id="welcome" class="py-5 text-light">
     <div class="container">
-        <h2>Wellcome {{ member.name }}</h2>
-        {% for booster in boosters %}
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="booster_id" value="{{ booster.id }}">
-            <button type="submit" style="color: RED">OPEN BOOSTER {{ booster.name_booster }}</button>
-        </form>
-        {% endfor %}
+        <h2>Welcome {{ member.name }}</h2>
         <hr class="w-25 border-light">
-        {% if opened_cards.ok %}
-        {% for card in opened_cards.cards %}
-        {% if card.rarity_card.id == 1 %}
-        <p>{{ card.name_card }}</p>
-        {% elif card.rarity_card.id == 2 %}
-        <p style="color: blue">{{ card.name_card }}</p>
-        {% elif card.rarity_card.id == 3 %}
-        <p style="color: purple">{{ card.name_card }}</p>
-        {% endif %}
-        {% endfor %}
-        {% else %}
-        <p>Ereh mileurista</p>
-        <p><b>PAGA</b>, POBRE</p>
-        <img class="col-12" src="https://statics.memondo.com/p/99/crs/2013/06/CR_836982_d430b6c1de3144039b9d7411b7ce83b4_rendirse.jpg?cb=1310521"
-             width="50" height="auto"/>
-        {% endif %}
+        <nav class="navbar navbar-expand-lg col-12">
+            <div class="col-12">
+                <div class="justify-content-center" id="mainNavbar">
+                    <ul class="navbar-nav mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'collection' %}" style="color: white">Collection</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'shop' %}" style="color: white">Shop</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#pase-recompensas" style="color: white">Reward System</a>
+                        </li>
+                        <li class="nav-item justify-content-center">
+                            <a class="nav-link btn btn-danger bg-danger text-white fw-bold"
+                               href="#combatir" style="color: white">¡MATCH!</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <hr class="w-25 border-light">
+        <br>
         <a href="{% url 'logout' %}" class="btn btn-danger">Log out</a>
     </div>
 </section>

@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ member.name }} - Collection{% endblock %}
+
+{% block content %}
+<div class="row">
+    <h2>{{ member.name }} collection</h2>
+    <hr class="w-25 border-light">
+    <nav class="navbar navbar-expand-lg col-12">
+        <div class="col-12">
+            <div class="justify-content-center" id="mainNavbar">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'collection' %}" style="color: white">Collection</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'shop' %}" style="color: white">Shop</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#pase-recompensas" style="color: white">Reward System</a>
+                    </li>
+                    <li class="nav-item justify-content-center">
+                        <a class="nav-link btn btn-danger bg-danger text-white fw-bold"
+                           href="#combatir" style="color: white">¡MATCH!</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <hr class="w-25 border-light">
+    <div class="col-12 row">
+        {% for info_card in cards_collection %}
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4 d-flex justify-content-center">
+            <div class="card text-white bg-dark border" style="width: 275px; height: 400px; font-size: 1rem;">
+                <!-- Imagen -->
+                <div class="bg-secondary" style="height: 150px; overflow: hidden;">
+                    <img src="{{ info_card.card.image.url }}" alt="{{ info_card.card.name_card }}"
+                         class="card-img-top"
+                         style="object-fit: cover; height: 100%; width: 100%;">
+                </div>
+
+                <!-- Cuerpo -->
+                <div class="card-body d-flex flex-column p-2">
+                    <h5 class="card-title text-center mb-1" style="font-size: 1rem;">{{ info_card.card.name_card }}</h5>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>HP: <strong>{{ info_card.card.hp_card }}</strong></span>
+                        <span>Cost: <strong>{{ info_card.card.cost_card }}</strong></span>
+                    </div>
+
+                    {% if info_card.card.ability_card.id != 14 %}
+                    <div class="mb-1">
+                        <strong>Ability:</strong> {{ info_card.card.ability_card.name_ability }}
+                        <p class="card-text" style="font-size: 0.75rem;">
+                            {{ info_card.card.ability_card.description_ability }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if info_card.card.attack_card.id != 5 %}
+                    <div class="mb-1">
+                        <strong>Attack:</strong> {{ info_card.card.attack_card.name_atk }}
+                        <p class="card-text" style="font-size: 0.75rem;">
+                            {{ info_card.card.attack_card.description_atk }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <hr class="w-25 border-light col-12">
+                    <p class="card-text mt-auto" style="font-size: 0.75rem;">
+                        {{ info_card.card.description_card }}
+                    </p>
+                </div>
+
+                <!-- Barra de rareza -->
+                <div style="height: 5px; width: 100%;"
+                     class="
+                            {% if info_card.card.rarity_card.id == 1 %} bg-secondary
+                            {% elif info_card.card.rarity_card.id == 2 %} bg-primary
+                            {% elif info_card.card.rarity_card.id == 3 %} bg-purple
+                            {% elif info_card.card.rarity_card.id == 4 %} bg-warning
+                            {% elif info_card.card.rarity_card.id == 5 %} bg-danger
+                            {% else %} bg-light
+                            {% endif %} card">
+                </div>
+            </div>
+            <div class="text-center
+                            {% if info_card.card.rarity_card.id == 1 %} bg-secondary
+                            {% elif info_card.card.rarity_card.id == 2 %} bg-primary
+                            {% elif info_card.card.rarity_card.id == 3 %} bg-purple
+                            {% elif info_card.card.rarity_card.id == 4 %} bg-warning
+                            {% elif info_card.card.rarity_card.id == 5 %} bg-danger
+                            {% else %} bg-light
+                            {% endif %} card" style="background-color: #3A3A3A; width: 10%; height: 8%; color: white;">
+                x{{ info_card.dupes }}
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<!-- CSS adicional -->
+<style>
+    .bg-purple {
+        background-color: #6f42c1 !important;
+    }
+</style>
+{% endblock content %}
