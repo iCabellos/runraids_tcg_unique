@@ -19,14 +19,15 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from core.views import IndexView, DashboardView, CombatView, logout_view, CityView
+from core.views import IndexView, DashboardView, CombatView, logout_view, CityView, CampView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', IndexView.as_view(), name="index"),
+    path('index/', IndexView.as_view(), name="index"),
+    path('', CampView.as_view(), name="camp"),
     path('userprofile/', DashboardView.as_view(), name="userprofile"),
     path('combat/', CombatView.as_view(), name="combat"),
-    path('city/', CityView.as_view(), name="city"),
+    path('alliance/', CityView.as_view(), name="alliance"),
     path('logout/', logout_view, name="logout"),
 ]
 

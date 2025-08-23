@@ -3,80 +3,92 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=430, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tu Ciudad</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Tu Ciudad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Orbitron', sans-serif;
-            background: url('{% static "img/background_humans.png" %}') no-repeat center center fixed;
-            background-size: cover;
-        }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+    font-family: 'Orbitron', sans-serif;
+    background: url('{% static "img/background_humans.png" %}') no-repeat center center fixed;
+    background-size: cover;
+  }
 
-        .city-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
+  .city-wrapper { position: relative; width: 100%; height: 100%; }
 
-        .building {
-            position: absolute;
-            width: 100px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.3s ease, filter 0.3s ease;
-        }
+  .building {
+    position: absolute;
+    text-align: center;
+    cursor: pointer;
+    transition: transform .3s ease, filter .3s ease;
+    transform-origin: 50% 100%;
+  }
 
-        .building:hover {
-            transform: scale(1.1);
-            filter: brightness(1.2);
-        }
+  .building img { width: 100%; height: auto; display:block; }
 
-        .building:active {
-            transform: scale(0.95);
-        }
+  .level-label {
+    position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.7); padding: 4px 8px; border-radius: 6px;
+    font-size: 14px; color: #00ffcc; box-shadow: 0 0 5px #00ffcc;
+  }
 
-        .building img {
-            width: 100%;
-            height: auto;
-        }
+  /* Tamaños por dispositivo */
+  @media (max-width: 480px)  { .building { width: 130px; } }
+  @media (min-width: 481px) and (max-width: 1100px) { .building { width: 170px; } }
+  @media (min-width: 1101px) { .building { width: 200px; } }
 
-        .level-label {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #00ffcc;
-            box-shadow: 0 0 5px #00ffcc;
-        }
-    </style>
+  /* Aplicación de posiciones por breakpoint */
+  @media (max-width: 480px)  { .building { top: var(--top-mobile); left: var(--left-mobile); } }
+  @media (min-width: 481px) and (max-width: 1100px) { .building { top: var(--top-ipad); left: var(--left-ipad); } }
+  @media (min-width: 1101px) { .building { top: var(--top-pc); left: var(--left-pc); } }
+</style>
 </head>
 <body>
-    <div class="city-wrapper">
-        {% for building in buildings %}
-            <div class="building"
-                style="
-                    top: {% cycle '5%' '25%' '45%' '65%' '30%' %};
-                    left: {% cycle '10%' '30%' '50%' '70%' '85%' %};"
-                onclick="alert('Abrir {{ building.building_type.name }}');">
+  <div class="city-wrapper">
+    {% for building in buildings %}
 
-                <div class="level-label">Lv. {{ building.level }}</div>
-                <img src="{{ building.image }}" alt="{{ building.building_type.name }}">
-            </div>
-        {% empty %}
-            <p style="color: white; text-align: center;">No tienes edificios aún.</p>
-        {% endfor %}
-    </div>
+      {# Fallbacks aleatorios/espaciados por iteración (PC) #}
+      {% cycle '35' '20' '55' '15' '55' '0' '0' '0' as pc_top silent %}
+      {% cycle '35'  '60' '35' '15' '70' '0' '0' '0' as pc_left silent %}
+
+      {# Fallbacks (iPad) #}
+      {% cycle '35' '20' '55' '15' '55' '0' '0' '0' as ipad_top silent %}
+      {% cycle '35'  '60' '35' '15' '70' '0' '0' '0' as ipad_left silent %}
+
+      {# Fallbacks (Móvil) #}
+      {% cycle '35' '20' '55' '15' '55' '0' '0' '0' as mob_top silent %}
+      {% cycle '35'  '60' '35' '15' '70' '0' '0' '0' as mob_left silent %}
+
+      <div
+        class="building b-{{ building.type }}"
+        style="
+          --top-pc: {% firstof building.pos_pc_top pc_top %}%;
+          --left-pc: {% firstof building.pos_pc_left pc_left %}%;
+          --top-ipad: {% firstof building.pos_ipad_top ipad_top %}%;
+          --left-ipad: {% firstof building.pos_ipad_left ipad_left %}%;
+          --top-mobile: {% firstof building.pos_mobile_top mob_top %}%;
+          --left-mobile: {% firstof building.pos_mobile_left mob_left %}%;
+          z-index: {{ building.z_index|default:1 }};
+        "
+      >
+        <div class="level-label">
+          Lv. {{ building.level }}
+          {% if building.can_upgrade %}
+            <span style="color: lime; font-size: 16px;">⬆</span>
+          {% endif %}
+        </div>
+
+        <img src="{{ building.image }}" alt="{{ building.name }}" onclick="document.getElementById('upgrade-form-{{ building.id }}').submit();">
+
+        <form id="upgrade-form-{{ building.id }}" method="post" action="" style="display: none;">
+          {% csrf_token %}
+          <input type="hidden" name="building_id" value="{{ building.id }}">
+        </form>
+      </div>
+
+    {% endfor %}
+  </div>
 </body>
 </html>

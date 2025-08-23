@@ -1,12 +1,15 @@
 from django.shortcuts import redirect, render
 from django.views.generic import TemplateView
-from core.forms import MemberLoginForm, CombatActionForm
+from core.forms import MemberLoginForm, CombatActionForm, UpgradeBuildingForm
 from core.services.combat_service import calculate_damage
-from core.models import Member, PlayerResource, PlayerBuilding, PlayerHero, Enemy, Ability
-
+from core.models import (
+    Member, PlayerResource, PlayerBuilding, PlayerHero,
+    Enemy, Ability, Alliance, AllianceBuilding, AllianceMember, BuildingLevelCost
+)
 import random
 
 
+# INDEX
 class IndexView(TemplateView):
     template_name = "index.html"
 
@@ -29,12 +32,12 @@ class IndexView(TemplateView):
         return render(request, self.template_name, {'form': form})
 
 
+# DASHBOARD
 class DashboardView(TemplateView):
     template_name = "dashboard.html"
 
     def dispatch(self, request, *args, **kwargs):
-        member_id = request.session.get('member_id')
-        if not member_id:
+        if not request.session.get('member_id'):
             return redirect("index")
         return super().dispatch(request, *args, **kwargs)
 
@@ -48,9 +51,117 @@ class DashboardView(TemplateView):
         context['buildings'] = PlayerBuilding.objects.filter(member=member)
         context['heroes'] = PlayerHero.objects.filter(member=member)
 
+        # Alianza
+        alliance_membership = AllianceMember.objects.filter(member=member).select_related('alliance').first()
+        if alliance_membership:
+            context['alliance'] = alliance_membership.alliance
+            context['alliance_role'] = alliance_membership.role
+            context['alliance_buildings'] = AllianceBuilding.objects.filter(alliance=alliance_membership.alliance)
+
         return context
 
 
+# CITY (Edificios de alianza)
+class CityView(TemplateView):
+    template_name = "city.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.session.get('member_id'):
+            return redirect("index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        member = Member.objects.get(id=self.request.session["member_id"])
+
+        membership = AllianceMember.objects.filter(member=member).first()
+        if membership:
+            alliance = membership.alliance
+            buildings = AllianceBuilding.objects.filter(alliance=alliance).select_related("building_type")
+
+            buildings_info = []
+            for building in buildings:
+                buildings_info.append({
+                    "type": building.building_type.type,
+                    "name": building.building_type.name,
+                    "level": building.level,
+                    "image": building.building_type.image.url if building.building_type.image else None,
+                })
+
+            context["buildings"] = buildings_info
+            context["alliance"] = alliance
+            context["role"] = membership.role
+        else:
+            context["buildings"] = []
+            context["alliance"] = None
+
+        return context
+
+
+# CAMP (Edificios individuales del jugador)
+class CampView(TemplateView):
+    template_name = "camp.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.session.get('member_id'):
+            return redirect("index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        member = Member.objects.get(id=self.request.session.get('member_id'))
+
+        heroes_member = PlayerHero.objects.filter(member=member).select_related('hero')
+        player_buildings = PlayerBuilding.objects.filter(member=member).select_related("building_type")
+
+        buildings_info = []
+        for building in player_buildings:
+            next_level = building.level + 1
+            costs = BuildingLevelCost.objects.filter(building_type=building.building_type, level=next_level)
+
+            is_max_level = not costs.exists()
+
+            resources = PlayerResource.objects.filter(member=member).select_related("resource_type").order_by(
+                "resource_type__name")
+
+            can_upgrade = True
+
+            if not resources:
+                can_upgrade = False
+            else:
+                for cost in costs:
+                    res = PlayerResource.objects.filter(member=member, resource_type=cost.resource_type).first()
+                    if not res or res.amount < cost.amount:
+                        can_upgrade = False
+                        break
+
+            buildings_info.append({
+                "id": building.id,
+                "type": building.building_type.type,
+                "name": building.building_type.name,
+                "level": building.level,
+                "image": building.building_type.image.url if building.building_type.image else None,
+                "can_upgrade": can_upgrade,
+                "is_max_level": is_max_level,
+                "upgrade_costs": list(costs),
+                "resources": resources,
+            })
+
+        context["member"] = member
+        context["buildings"] = buildings_info
+        context["upgrade_form"] = UpgradeBuildingForm()
+        context["heroes"] = heroes_member
+        return context
+
+    def post(self, request, *args, **kwargs):
+        member = Member.objects.get(id=self.request.session.get('member_id'))
+        form = UpgradeBuildingForm(request.POST, member=member)
+        if form.is_valid():
+            form.save()
+        return redirect("camp")
+
+
+# COMBATE
 class CombatView(TemplateView):
     template_name = "combat.html"
 
@@ -64,7 +175,6 @@ class CombatView(TemplateView):
         if not hero:
             return redirect("userprofile")
 
-        # Si no hay estado, inicializamos
         if "combat" not in request.session:
             enemy = Enemy.objects.order_by("?").first()
             hero_hp = hero.current_hp
@@ -80,7 +190,6 @@ class CombatView(TemplateView):
                 "log": log
             }
 
-        # Si es turno del enemigo, procesamos automáticamente y redirigimos
         state = request.session["combat"]
         if state["turn"] == "enemy":
             enemy = Enemy.objects.get(id=state["enemy_id"])
@@ -106,6 +215,7 @@ class CombatView(TemplateView):
         hero = PlayerHero.objects.filter(member=member).first()
         state = self.request.session["combat"]
         enemy = Enemy.objects.get(id=state["enemy_id"])
+        resources = PlayerResource.objects.filter(member=member)
 
         form = CombatActionForm(hero=hero)
 
@@ -118,6 +228,7 @@ class CombatView(TemplateView):
             "hero_hp": state["hero_hp"],
             "enemy_hp": state["enemy_hp"],
             "turn": state["turn"],
+            "resources": resources,
         })
         return context
 
@@ -149,37 +260,6 @@ class CombatView(TemplateView):
 
         return redirect("combat")
 
-
-class CityView(TemplateView):
-    template_name = "city.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        member_id = request.session.get('member_id')
-        if not member_id:
-            return redirect("index")
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        member_id = self.request.session.get('member_id')
-        member = Member.objects.get(id=member_id)
-
-        player_buildings = PlayerBuilding.objects.filter(member=member).select_related("building_type")
-
-        buildings_info = []
-        for building in player_buildings:
-            buildings_info.append({
-                "type": building.building_type.type,
-                "name": building.building_type.name,
-                "level": building.level,
-                "image": building.building_type.image.url if building.building_type.image else None,
-                "xp_rate": building.xp_rate if building.building_type.type == 'xp_farming' else None,
-                "stored_xp": building.stored_xp if building.building_type.type == 'xp_farming' else None
-            })
-
-        context["member"] = member
-        context["buildings"] = buildings_info
-        return context
 
 def logout_view(request):
     request.session.flush()
