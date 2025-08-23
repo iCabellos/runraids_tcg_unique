@@ -1,0 +1,209 @@
+{
+  "resource_types": [
+    {"name": "Oro", "description": "Moneda principal del juego"},
+    {"name": "Madera", "description": "Material de construcción básico"},
+    {"name": "Piedra", "description": "Material de construcción resistente"},
+    {"name": "Hierro", "description": "Material para armas y herramientas"},
+    {"name": "Comida", "description": "Necesaria para mantener a los héroes"}
+  ],
+  "building_types": [
+    {"type": "CAMP", "name": "Campamento"},
+    {"type": "BARRACKS", "name": "Cuarteles"},
+    {"type": "FARM", "name": "Granja"},
+    {"type": "MINE", "name": "Mina"},
+    {"type": "SAWMILL", "name": "Aserradero"},
+    {"type": "QUARRY", "name": "Cantera"}
+  ],
+  "rarities": [
+    {"type": "COMMON", "multiplier": 1.0},
+    {"type": "UNCOMMON", "multiplier": 1.2},
+    {"type": "RARE", "multiplier": 1.5},
+    {"type": "EPIC", "multiplier": 2.0},
+    {"type": "LEGENDARY", "multiplier": 3.0}
+  ],
+  "abilities": [
+    {
+      "name": "Golpe Básico",
+      "type": "ATTACK",
+      "power": 50,
+      "description": "Un ataque básico con arma"
+    },
+    {
+      "name": "Curación Menor",
+      "type": "HEAL",
+      "power": 30,
+      "description": "Restaura una pequeña cantidad de vida"
+    },
+    {
+      "name": "Escudo Mágico",
+      "type": "DEFENSE",
+      "power": 25,
+      "description": "Aumenta la defensa temporalmente"
+    },
+    {
+      "name": "Golpe Crítico",
+      "type": "ATTACK",
+      "power": 80,
+      "description": "Un ataque poderoso con posibilidad de crítico"
+    },
+    {
+      "name": "Curación Mayor",
+      "type": "HEAL",
+      "power": 60,
+      "description": "Restaura una gran cantidad de vida"
+    }
+  ],
+  "heroes": [
+    {
+      "name": "Guerrero Novato",
+      "rarity": "COMMON",
+      "description": "Un guerrero joven con potencial",
+      "base_hp": 100,
+      "base_attack": 50,
+      "base_defense": 30,
+      "base_speed": 25,
+      "abilities": ["Golpe Básico", "Escudo Mágico"]
+    },
+    {
+      "name": "Mago Aprendiz",
+      "rarity": "COMMON",
+      "description": "Un mago que está aprendiendo las artes arcanas",
+      "base_hp": 80,
+      "base_attack": 40,
+      "base_defense": 20,
+      "base_speed": 30,
+      "abilities": ["Curación Menor", "Golpe Básico"]
+    },
+    {
+      "name": "Arquero Élite",
+      "rarity": "UNCOMMON",
+      "description": "Un arquero experimentado con puntería letal",
+      "base_hp": 90,
+      "base_attack": 65,
+      "base_defense": 25,
+      "base_speed": 40,
+      "abilities": ["Golpe Crítico", "Escudo Mágico"]
+    },
+    {
+      "name": "Paladín Sagrado",
+      "rarity": "RARE",
+      "description": "Un guerrero bendecido con poderes divinos",
+      "base_hp": 150,
+      "base_attack": 60,
+      "base_defense": 50,
+      "base_speed": 20,
+      "abilities": ["Curación Mayor", "Golpe Crítico", "Escudo Mágico"]
+    },
+    {
+      "name": "Dragón Ancestral",
+      "rarity": "LEGENDARY",
+      "description": "Una criatura legendaria de inmenso poder",
+      "base_hp": 300,
+      "base_attack": 120,
+      "base_defense": 80,
+      "base_speed": 35,
+      "abilities": ["Golpe Crítico", "Curación Mayor", "Escudo Mágico"]
+    }
+  ],
+  "enemies": [
+    {
+      "name": "Goblin Salvaje",
+      "hp": 50,
+      "attack": 25,
+      "defense": 10,
+      "speed": 30,
+      "description": "Un goblin agresivo del bosque"
+    },
+    {
+      "name": "Orc Guerrero",
+      "hp": 120,
+      "attack": 45,
+      "defense": 25,
+      "speed": 20,
+      "description": "Un orc fuerte y brutal"
+    },
+    {
+      "name": "Troll de las Montañas",
+      "hp": 200,
+      "attack": 60,
+      "defense": 40,
+      "speed": 15,
+      "description": "Un troll gigante de las montañas"
+    }
+  ],
+  "test_users": [
+    {
+      "name": "TestPlayer1",
+      "firstname": "Jugador",
+      "email": "test1@runraids.com",
+      "phone": 123456789,
+      "password": "testpass123",
+      "resources": {
+        "Oro": 1000,
+        "Madera": 500,
+        "Piedra": 300,
+        "Hierro": 200,
+        "Comida": 800
+      },
+      "heroes": ["Guerrero Novato", "Mago Aprendiz"]
+    },
+    {
+      "name": "TestPlayer2",
+      "firstname": "Jugador",
+      "email": "test2@runraids.com",
+      "phone": 987654321,
+      "password": "testpass123",
+      "resources": {
+        "Oro": 1500,
+        "Madera": 700,
+        "Piedra": 400,
+        "Hierro": 350,
+        "Comida": 1200
+      },
+      "heroes": ["Arquero Élite", "Paladín Sagrado"]
+    },
+    {
+      "name": "AdminPlayer",
+      "firstname": "Administrador",
+      "email": "admin@runraids.com",
+      "phone": 111111111,
+      "password": "adminpass123",
+      "resources": {
+        "Oro": 10000,
+        "Madera": 5000,
+        "Piedra": 3000,
+        "Hierro": 2000,
+        "Comida": 8000
+      },
+      "heroes": ["Dragón Ancestral", "Paladín Sagrado", "Arquero Élite"]
+    }
+  ],
+  "building_costs": [
+    {
+      "building_type": "BARRACKS",
+      "level": 2,
+      "costs": [
+        {"resource": "Oro", "amount": 100},
+        {"resource": "Madera", "amount": 50},
+        {"resource": "Piedra", "amount": 25}
+      ]
+    },
+    {
+      "building_type": "FARM",
+      "level": 2,
+      "costs": [
+        {"resource": "Oro", "amount": 80},
+        {"resource": "Madera", "amount": 60}
+      ]
+    },
+    {
+      "building_type": "MINE",
+      "level": 2,
+      "costs": [
+        {"resource": "Oro", "amount": 120},
+        {"resource": "Madera", "amount": 40},
+        {"resource": "Piedra", "amount": 30}
+      ]
+    }
+  ]
+}

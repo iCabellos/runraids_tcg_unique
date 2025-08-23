@@ -1,23 +1,35 @@
-# 🌆 City Clash - Juego de Gestión con Héroes y Raids Cooperativos PvE
+# 🎮 RunRaids TCG - Juego de Cartas Coleccionables
 
-## 🏆 Idea Principal
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tu-usuario/runraids-tcg)
 
-City Clash es un **juego RPG de gestión de ciudad y raids cooperativos** por turnos, con héroes legendarios y míticos, y un sistema de ítems únicos. El jugador mejora su ciudad, colecciona héroes, equipa ítems y se une a otros jugadores para enfrentarse en raids épicas por oleadas.
+Un juego de cartas coleccionables (TCG) desarrollado con Django, diseñado para ser deployado en Vercel con PostgreSQL y preparado para futuras integraciones con Unity, UE5 y otras plataformas.
 
-### 🔹 Características Generales
-- 🎮 Juego cooperativo hasta **6 jugadores** por raid.
-- 🦸‍♂️ **Héroes autocasteados** con habilidades pasivas y definitivas.
-- 🕹️ **Combates por turnos** con sistema de velocidad y stamina.
-- 🏗️ Construye tu ciudad y produce recursos como oro o comida.
-- 🎲 Sistema **gacha** para conseguir héroes con rarezas únicas.
-- 🎁 Ítems equipables que potencian características y pasivas.
+## 🌟 Características
 
----
+- 🏰 **Sistema de Edificios**: Construye y mejora edificios en tu campamento
+- ⚔️ **Combate por Turnos**: Sistema de combate estratégico con habilidades
+- 🦸 **Héroes Coleccionables**: Diferentes raridades y habilidades únicas
+- 🏛️ **Sistema de Alianzas**: Únete a otros jugadores y construye juntos
+- 💰 **Economía de Recursos**: Gestiona oro, madera, piedra, hierro y comida
+- 🎲 **Sistema de Raridades**: Desde común hasta legendario
+- 📱 **API-First**: Lógica de negocio separada para futuras integraciones
 
-## 🎯 Características Detalladas
+## 🚀 Demo en Vivo
 
-### ✅ Ciudad y Recursos
-- Sistema de edificios: minas, cuarteles, torres de magia...
+🔗 **[Ver Demo](https://tu-app.vercel.app)**
+
+### Usuarios de Prueba:
+- **Teléfono**: `123456789` | **Contraseña**: `testpass123`
+- **Teléfono**: `987654321` | **Contraseña**: `testpass123`
+- **Teléfono**: `111111111` | **Contraseña**: `adminpass123` (Admin)
+
+## 🛠️ Tecnologías
+
+- **Backend**: Django 5.1.6 + Django REST Framework
+- **Base de Datos**: PostgreSQL (Vercel Postgres)
+- **Frontend**: HTML5 + Bootstrap + JavaScript
+- **Deployment**: Vercel con CI/CD automático
+- **Autenticación**: Sistema de sesiones Django
 - Recursos: oro, comida, cristales... todos upgradables.
 - Upgrades por tiempo con mejoras visuales y funcionales.
 
