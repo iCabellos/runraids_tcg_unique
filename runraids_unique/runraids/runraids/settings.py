@@ -79,20 +79,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "runraids.wsgi.application"
 
-# --- Base de datos ---
+# =========================
+#        BASE DE DATOS
+# =========================
+
+# 1) Intentar leer DATABASE_URL directamente
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
+# 2) Si está vacío, reconstruirlo desde las piezas (evita depender de la interpolación de Vercel)
+if not DATABASE_URL:
+    db_user = os.getenv("DB_USER", "").strip()
+    db_password = os.getenv("DB_PASSWORD", "").strip()
+    db_host = os.getenv("DB_HOST", "").strip()
+    db_port = os.getenv("DB_PORT", "").strip()
+    db_name = os.getenv("DB_NAME", "").strip()
+    if all([db_user, db_password, db_host, db_port, db_name]):
+        DATABASE_URL = f"postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?sslmode=require"
+
+# 3) Lógica final:
+#    - En Vercel o en producción (DEBUG=False) exigimos Postgres (sin SQLite).
+#    - En local con DEBUG=True, si no hay DATABASE_URL, usamos SQLite por comodidad.
 if (ON_VERCEL or not DEBUG):
-    # En Vercel/producción exigimos DATABASE_URL (sin SQLite)
     if not DATABASE_URL:
         raise RuntimeError(
             "DATABASE_URL es obligatorio en Vercel/producción. "
             "Configúralo (Transaction Pooler de Supabase con ?sslmode=require)."
         )
     if not dj_database_url:
-        raise RuntimeError(
-            "dj-database-url no está instalado pero es necesario en Vercel/producción."
-        )
+        raise RuntimeError("dj-database-url debe estar instalado en Vercel/producción.")
     DATABASES = {
         "default": dj_database_url.config(
             default=DATABASE_URL,
@@ -101,7 +115,6 @@ if (ON_VERCEL or not DEBUG):
         )
     }
 else:
-    # Solo en desarrollo local, si no hay DATABASE_URL, usamos SQLite
     if DATABASE_URL and dj_database_url:
         DATABASES = {
             "default": dj_database_url.config(
