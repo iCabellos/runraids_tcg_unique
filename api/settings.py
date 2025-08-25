@@ -6,6 +6,7 @@ Adaptado para Vercel + Supabase (Transaction Pooler). Sin fallback a SQLite.
 
 import os
 from pathlib import Path
+from decouple import config
 
 # --- Librería para parsear DATABASE_URL ---
 try:
@@ -14,6 +15,14 @@ except ImportError:
     dj_database_url = None
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Lee primero .env.local si existe
+from decouple import Config, RepositoryEnv
+env_file = BASE_DIR / ".env.local"
+if env_file.exists():
+    env = Config(RepositoryEnv(str(env_file)))
+else:
+    env = config
 
 # =========
 # Seguridad

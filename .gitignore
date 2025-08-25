@@ -1,0 +1,85 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+*.env
+*.env.local
+
+# Logs / Coverage
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.mo
+*.pot
+.coverage
+coverage/
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.pytest_cache/
+.dmypy.json
+.pyre/
+
+# =========================
+# Django
+# =========================
+db.sqlite3
+*.sqlite3
+media/
+staticfiles/
+staticfiles_build/
+
+# =========================
+# IDE / Editors
+# =========================
+# PyCharm
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# =========================
+# OS-specific
+# =========================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+.Spotlight-V100
+.Trashes
+._*
+
+# Linux
+*~
+.nfs*
+
+# =========================
+# Others
+# =========================
+*.bak
+*.swp
+*.swo
