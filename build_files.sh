@@ -49,7 +49,7 @@ if [ "${VERCEL:-}" = "1" ] || [ "${VERCEL:-}" = "true" ]; then
   fi
 fi
 
-# --- DEBUG: ver qué env recibe y qué DB engine resuelve Django ---
+# --- DEBUG: ver env y engine de Django ---
 echo "DEBUG Vercel: VERCEL=${VERCEL:-<no set>}"
 if [ -z "${DATABASE_URL:-}" ]; then
   echo "DEBUG: DATABASE_URL está VACÍO en el entorno de build"
@@ -57,8 +57,9 @@ else
   echo "DEBUG: DATABASE_URL está DEFINIDO (oculto)"
 fi
 
-# Forzar el módulo de settings y mostrar el ENGINE que Django va a usar
-export DJANGO_SETTINGS_MODULE=runraids.settings
+# Usa el módulo de settings REAL de tu proyecto
+export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-api.settings}
+
 $PY - <<'PYCODE'
 import os, django
 print("DEBUG: DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
@@ -70,6 +71,9 @@ try:
 except Exception as e:
     print("DEBUG: django.setup() error ->", repr(e))
 PYCODE
+
+# --- Collect static ---
+$PY manage.py collectstatic --noinput --clear
 
 # --- Collect static ---
 # NOTA: no ejecutamos migraciones ni seeds en el paso de build de Vercel.
