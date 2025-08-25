@@ -7,34 +7,34 @@ Generado con Django 5.1.6 y adaptado para despliegue en Vercel + Supabase.
 import os
 from pathlib import Path
 
-# dj_database_url es opcional: si no está instalado, hacemos fallback a SQLite
+# dj_database_url para parsear DATABASE_URL
 try:
     import dj_database_url  # type: ignore
 except ImportError:  # pragma: no cover
     dj_database_url = None  # noqa
 
-# --- Paths base ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- Seguridad / entorno ---
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-no-seguro")
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
-# Hosts permitidos (incluye dominios Vercel)
+# Detectar entorno Vercel
+ON_VERCEL = os.getenv("VERCEL", "") not in ("", "0", "false", "False")
+
+# Hosts / CSRF
 ALLOWED_HOSTS = [".vercel.app", "localhost", "127.0.0.1"]
 _extra_hosts = os.getenv("ALLOWED_HOSTS", "").strip()
 if _extra_hosts:
     ALLOWED_HOSTS.extend([h.strip() for h in _extra_hosts.split(",") if h.strip()])
 
-# Orígenes de confianza para CSRF (Vercel y opcionales por env, separados por comas)
 CSRF_TRUSTED_ORIGINS = ["https://*.vercel.app"]
 _extra_csrf = os.getenv("CSRF_TRUSTED_ORIGINS", "").strip()
 if _extra_csrf:
     CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _extra_csrf.split(",") if o.strip()])
 
-# --- Aplicaciones ---
+# --- Apps ---
 INSTALLED_APPS = [
-    # Django
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -50,9 +50,7 @@ INSTALLED_APPS = [
 # --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # Whitenoise para servir estáticos en Vercel / WSGI
     "whitenoise.middleware.WhiteNoiseMiddleware",
-
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -66,7 +64,7 @@ ROOT_URLCONF = "runraids.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],  # Añade rutas si tienes plantillas globales
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -82,24 +80,43 @@ TEMPLATES = [
 WSGI_APPLICATION = "runraids.wsgi.application"
 
 # --- Base de datos ---
-# En Vercel/Supabase: usa DATABASE_URL (Transaction Pooler con sslmode=require)
-# En local: si no hay DATABASE_URL o falta dj_database_url -> SQLite
-_database_url = os.getenv("DATABASE_URL", "").strip()
-if _database_url and dj_database_url:
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+
+if (ON_VERCEL or not DEBUG):
+    # En Vercel/producción exigimos DATABASE_URL (sin SQLite)
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL es obligatorio en Vercel/producción. "
+            "Configúralo (Transaction Pooler de Supabase con ?sslmode=require)."
+        )
+    if not dj_database_url:
+        raise RuntimeError(
+            "dj-database-url no está instalado pero es necesario en Vercel/producción."
+        )
     DATABASES = {
         "default": dj_database_url.config(
-            default=_database_url,
+            default=DATABASE_URL,
             conn_max_age=600,
             ssl_require=True,
         )
     }
 else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+    # Solo en desarrollo local, si no hay DATABASE_URL, usamos SQLite
+    if DATABASE_URL and dj_database_url:
+        DATABASES = {
+            "default": dj_database_url.config(
+                default=DATABASE_URL,
+                conn_max_age=600,
+                ssl_require=True,
+            )
         }
-    }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 
 # --- Validación de contraseñas ---
 AUTH_PASSWORD_VALIDATORS = [
@@ -115,17 +132,14 @@ TIME_ZONE = os.getenv("TIME_ZONE", "Europe/Madrid")
 USE_I18N = True
 USE_TZ = True
 
-# --- Archivos estáticos / media ---
+# --- Estáticos / media ---
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Whitenoise: comprimir y versionar estáticos
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# --- Primary key por defecto ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Seguridad extra en producción ---
@@ -135,7 +149,7 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-# --- Logging básico (útil para depurar en Vercel) ---
+# --- Logging a consola (útil en Vercel) ---
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
