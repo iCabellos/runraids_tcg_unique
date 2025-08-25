@@ -76,11 +76,16 @@ TEMPLATES = [
     },
 ]
 
-# ===========
-# Base de datos (Postgres requerido SIEMPRE)
-# ===========
-# Usa la URL literal (recomendada) o la reconstruimos de las piezas DB_* si fuese necesario.
+# =========================
+#        BASE DE DATOS
+# =========================
+
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+
+# Opción para forzar SQLite en local
+USE_SQLITE = os.getenv("USE_SQLITE", "").lower() in {"1", "true", "yes"}
+
+# Reconstruir DATABASE_URL a partir de piezas si fuese necesario
 if not DATABASE_URL:
     u = os.getenv("DB_USER", "").strip()
     p = os.getenv("DB_PASSWORD", "").strip()
@@ -90,21 +95,37 @@ if not DATABASE_URL:
     if all([u, p, h, pt, n]):
         DATABASE_URL = f"postgres://{u}:{p}@{h}:{pt}/{n}?sslmode=require"
 
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL no está definido. Configura la URL del pooler de Supabase "
-        "(p. ej. postgres://usuario:pass@aws-1-...pooler.supabase.com:6543/postgres?sslmode=require)."
-    )
-if not dj_database_url:
-    raise RuntimeError("Falta 'dj-database-url' en tu entorno. Añádelo a requirements.txt.")
+IS_PROD = os.getenv("VERCEL", "") not in ("", "0", "false", "False") or not DEBUG
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        ssl_require=True,
-    )
-}
+if IS_PROD and not USE_SQLITE:
+    # Producción: exigir Postgres
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL no está definido. Configura la URL del pooler de Supabase."
+        )
+    import dj_database_url
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL, conn_max_age=600, ssl_require=True
+        )
+    }
+else:
+    # Desarrollo/local: si hay DATABASE_URL úsalo; si no, SQLite
+    if DATABASE_URL:
+        import dj_database_url
+        DATABASES = {
+            "default": dj_database_url.config(
+                default=DATABASE_URL, conn_max_age=0, ssl_require=False
+            )
+        }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
+
 
 # =================
 # Password policies

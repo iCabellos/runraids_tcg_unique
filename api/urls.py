@@ -13,8 +13,8 @@ from core.views import IndexView, DashboardView, CombatView, logout_view, CityVi
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('index/', IndexView.as_view(), name="index"),
-    path('', CampView.as_view(), name="camp"),
+    path('', IndexView.as_view(), name="index"),
+    path('camp/', CampView.as_view(), name="camp"),
     path('userprofile/', DashboardView.as_view(), name="userprofile"),
     path('combat/', CombatView.as_view(), name="combat"),
     path('alliance/', CityView.as_view(), name="alliance"),
