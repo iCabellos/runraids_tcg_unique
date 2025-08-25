@@ -6,7 +6,6 @@ Adaptado para Vercel + Supabase (Transaction Pooler). Sin fallback a SQLite.
 
 import os
 from pathlib import Path
-from decouple import config
 
 # --- Librería para parsear DATABASE_URL ---
 try:
@@ -16,21 +15,52 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Lee primero .env.local si existe
-from decouple import Config, RepositoryEnv
-env_file = BASE_DIR / ".env.local"
-if env_file.exists():
-    env = Config(RepositoryEnv(str(env_file)))
-else:
-    env = config
+
+# ---- Carga de variables de entorno (decouple con fallback) ----
+def _make_env_reader():
+    try:
+        # decouple instalado
+        from decouple import Config, RepositoryEnv, AutoConfig  # type: ignore
+
+        env_local = BASE_DIR / ".env.local"
+        if env_local.exists():
+            _cfg = Config(RepositoryEnv(str(env_local)))
+
+            def _get(key, default=None):
+                try:
+                    return _cfg(key)
+                except Exception:
+                    return os.getenv(key, default)
+        else:
+            # Buscar .env en BASE_DIR si existiera; si no, usa os.getenv
+            _auto = AutoConfig(search_path=str(BASE_DIR))
+
+            def _get(key, default=None):
+                try:
+                    return _auto(key)
+                except Exception:
+                    return os.getenv(key, default)
+
+        return _get
+    except Exception:
+        # decouple no disponible -> usar os.getenv directamente
+        def _get(key, default=None):
+            return os.getenv(key, default)
+
+        return _get
+
+
+ENV = _make_env_reader()
 
 # =========
 # Seguridad
 # =========
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-no-seguro")
-DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+SECRET_KEY = ENV("SECRET_KEY", "dev-secret-key-no-seguro")
+DEBUG = (str(ENV("DEBUG", "false")).lower() == "true")
+USE_SQLITE = str(ENV("USE_SQLITE", "false")).lower() in {"1", "true", "yes"}
+DATABASE_URL = (ENV("DATABASE_URL", "") or "").strip()
 
-ALLOWED_HOSTS = [".vercel.app", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [".vercel.app", "localhost", "127.0.0.1", ""]
 _extra_hosts = os.getenv("ALLOWED_HOSTS", "").strip()
 if _extra_hosts:
     ALLOWED_HOSTS.extend([h.strip() for h in _extra_hosts.split(",") if h.strip()])
