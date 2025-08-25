@@ -104,39 +104,62 @@ TEMPLATES = [
 # -------------
 # Base de datos
 # -------------
-# Nota: 'producción' si estamos en Vercel o si DEBUG=False
-IS_PROD = (str(ENV("VERCEL", "")).lower() in {"1", "true"}) or (not DEBUG)
+# Flags de entorno
+IS_VERCEL = str(ENV("VERCEL", "")).lower() in {"1", "true"}
+FORCE_PROD = str(ENV("FORCE_PROD", "")).lower() in {"1", "true"}
+IS_PROD = IS_VERCEL or FORCE_PROD or (not DEBUG)
 
-if IS_PROD and not USE_SQLITE:
-    # Producción: exigir Postgres
-    if not DATABASE_URL:
-        raise RuntimeError("DATABASE_URL no está definido. Configura la URL del pooler de Supabase.")
-    import dj_database_url  # type: ignore
+# IMPORTANTE: si USE_SQLITE=true, **ignorar** cualquier DATABASE_URL
+if USE_SQLITE:
     DATABASES = {
-        "default": dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True,
-        )
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
 else:
-    # Desarrollo/local: usa DATABASE_URL si existe, si no SQLite
-    if DATABASE_URL:
+    # Si no forzamos SQLite: usar Postgres en prod, y Postgres o SQLite en local
+    DATABASE_URL = (ENV("DATABASE_URL", "") or "").strip()
+
+    # Reconstruir si viene por piezas (opcional)
+    if not DATABASE_URL:
+        u = (ENV("DB_USER", "") or "").strip()
+        p = (ENV("DB_PASSWORD", "") or "").strip()
+        h = (ENV("DB_HOST", "") or "").strip()
+        pt = (ENV("DB_PORT", "") or "").strip()
+        n = (ENV("DB_NAME", "") or "").strip()
+        if all([u, p, h, pt, n]):
+            DATABASE_URL = f"postgres://{u}:{p}@{h}:{pt}/{n}?sslmode=require"
+
+    if IS_PROD:
+        if not DATABASE_URL:
+            raise RuntimeError("DATABASE_URL no está definido. Configura la URL del pooler de Supabase.")
         import dj_database_url  # type: ignore
         DATABASES = {
             "default": dj_database_url.config(
                 default=DATABASE_URL,
-                conn_max_age=0,
-                ssl_require=False,
+                conn_max_age=600,
+                ssl_require=True,
             )
         }
     else:
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": BASE_DIR / "db.sqlite3",
+        if DATABASE_URL:
+            import dj_database_url  # type: ignore
+            DATABASES = {
+                "default": dj_database_url.config(
+                    default=DATABASE_URL,
+                    conn_max_age=0,
+                    ssl_require=False,
+                )
             }
-        }
+        else:
+            DATABASES = {
+                "default": {
+                    "ENGINE": "django.db.backends.sqlite3",
+                    "NAME": BASE_DIR / "db.sqlite3",
+                }
+            }
+
 
 # --------------------
 # Password policies
