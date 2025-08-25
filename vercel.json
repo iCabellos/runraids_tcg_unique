@@ -1,4 +1,10 @@
 {
-  "buildCommand": "bash build_files.sh",
-  "outputDirectory": "staticfiles_build"
+  "builds": [
+    { "src": "api/wsgi.py", "use": "@vercel/python" },
+    { "src": "build_files.sh", "use": "@vercel/static-build", "config": { "distDir": "staticfiles_build" } }
+  ],
+  "routes": [
+    { "src": "/static/(.*)", "dest": "/staticfiles_build/$1", "headers": { "Cache-Control": "public, max-age=31536000, immutable" } },
+    { "src": "/(.*)", "dest": "/api/wsgi.py" }
+  ]
 }
