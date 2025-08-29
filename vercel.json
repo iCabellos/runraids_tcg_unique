@@ -20,13 +20,5 @@
       "src": "/(.*)",
       "dest": "api/wsgi.py"
     }
-  ],
-  "env": {
-    "DJANGO_SETTINGS_MODULE": "api.settings"
-  },
-  "functions": {
-    "api/wsgi.py": {
-      "includeFiles": "**"
-    }
-  }
+  ]
 }

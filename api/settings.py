@@ -63,7 +63,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'api.wsgi.app'
 
 # Database configuration
-# Priority: DATABASE_URL > POSTGRES_URL > SQLite (fallback)
+# Priority: DATABASE_URL > POSTGRES_URL > SQLite (fallback only if no env vars)
 database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
 
 if database_url:
@@ -72,16 +72,23 @@ if database_url:
     DATABASES = {
         'default': dj_database_url.parse(database_url)
     }
-    print(f"Using PostgreSQL database: {database_url.split('@')[1] if '@' in database_url else 'configured'}")
+    # Don't print sensitive connection info in production
+    if DEBUG:
+        host_info = database_url.split('@')[1].split('/')[0] if '@' in database_url else 'configured'
+        print(f"🗄️  Using PostgreSQL database: {host_info}")
+    else:
+        print("🗄️  Using PostgreSQL database")
 else:
-    # Local development database (SQLite fallback)
+    # Fallback to SQLite only if no DATABASE_URL is provided
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    print("Using SQLite database for local development")
+    print("⚠️  Using SQLite database (no DATABASE_URL found)")
+    if not DEBUG:
+        print("🚨 WARNING: Using SQLite in production is not recommended!")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
