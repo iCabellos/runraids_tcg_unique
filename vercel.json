@@ -1,17 +1,19 @@
 {
-  "functions": {
-    "api/server.py": {
-      "runtime": "python3.11",
-      "maxDuration": 10
-    }
-  },
+  "version": 2,
   "buildCommand": "bash build_files.sh",
   "outputDirectory": "staticfiles_build",
+
+  "functions": {
+    "api/**/*.py": { "runtime": "python3.11" }
+  },
+
   "routes": [
     {
       "src": "/static/(.*)",
       "dest": "/staticfiles_build/$1",
-      "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
     },
     {
       "src": "/(.*)",
