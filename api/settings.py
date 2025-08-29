@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+DJANGO_SETTINGS_MODULE = "api.settings"
 
 # -----------------------------
 # Carga de variables de entorno
