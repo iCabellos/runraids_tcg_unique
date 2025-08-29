@@ -1,211 +1,151 @@
 """
-Django settings for runraids project.
+Django settings for runraids project - Vercel deployment.
 
-Adaptado para Vercel + Supabase (Transaction Pooler).
-En producción: Postgres obligatorio. En local: SQLite si no hay DATABASE_URL o si USE_SQLITE=true.
+Based on Vercel Django template for maximum compatibility.
 """
-
 import os
 from pathlib import Path
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# -----------------------------
-# Carga de variables de entorno
-# -----------------------------
-def _make_env_reader():
-    try:
-        from decouple import Config, RepositoryEnv, AutoConfig  # type: ignore
-        env_local = BASE_DIR / ".env.local"
-        if env_local.exists():
-            _cfg = Config(RepositoryEnv(str(env_local)))
-            def _get(key, default=None):
-                try:
-                    return _cfg(key)
-                except Exception:
-                    return os.getenv(key, default)
-        else:
-            _auto = AutoConfig(search_path=str(BASE_DIR))
-            def _get(key, default=None):
-                try:
-                    return _auto(key)
-                except Exception:
-                    return os.getenv(key, default)
-        return _get
-    except Exception:
-        def _get(key, default=None):
-            return os.getenv(key, default)
-        return _get
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-&9$1wr5oe9m(a6*=u_85*!mlpf%j&2(0ow6wd^4v#+ohy-*q8j')
 
-ENV = _make_env_reader()
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-# -----------------
-# Seguridad / Entorno
-# -----------------
-SECRET_KEY = ENV("SECRET_KEY", "dev-secret-key-no-seguro")
-DEBUG = str(ENV("DEBUG", "false")).lower() == "true"
-USE_SQLITE = str(ENV("USE_SQLITE", "false")).lower() in {"1", "true", "yes"}
-DATABASE_URL = (ENV("DATABASE_URL", "") or "").strip()
+# Vercel deployment hosts
+ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app', 'localhost']
+if os.environ.get('VERCEL_URL'):
+    ALLOWED_HOSTS.append(os.environ.get('VERCEL_URL'))
 
-ALLOWED_HOSTS = [".vercel.app", "localhost", "127.0.0.1"]
-_extra_hosts = (ENV("ALLOWED_HOSTS", "") or "").strip()
-if _extra_hosts:
-    ALLOWED_HOSTS.extend([h.strip() for h in _extra_hosts.split(",") if h.strip()])
-
-CSRF_TRUSTED_ORIGINS = ["https://*.vercel.app"]
-_extra_csrf = (ENV("CSRF_TRUSTED_ORIGINS", "") or "").strip()
-if _extra_csrf:
-    CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _extra_csrf.split(",") if o.strip()])
-
-# ----------
-# Apps/Middleware
-# ----------
+# Application definition
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    # Apps propias
-    "core",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Own apps
+    'core',
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = "api.urls"
-WSGI_APPLICATION = "api.wsgi.application"
+ROOT_URLCONF = 'api.urls'
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
 ]
 
-# -------------
-# Base de datos
-# -------------
-# Flags de entorno
-IS_VERCEL = str(ENV("VERCEL", "")).lower() in {"1", "true"}
-FORCE_PROD = str(ENV("FORCE_PROD", "")).lower() in {"1", "true"}
-IS_PROD = IS_VERCEL or FORCE_PROD or (not DEBUG)
+WSGI_APPLICATION = 'api.wsgi.app'
 
-# IMPORTANTE: si USE_SQLITE=true, **ignorar** cualquier DATABASE_URL
-if USE_SQLITE:
+# Database configuration for Vercel
+# Uses PostgreSQL in production, SQLite for local development
+if os.environ.get('POSTGRES_URL'):
+    # Production database (Vercel Postgres)
+    import dj_database_url
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+        'default': dj_database_url.parse(os.environ.get('POSTGRES_URL'))
     }
 else:
-    # Si no forzamos SQLite: usar Postgres en prod, y Postgres o SQLite en local
-    DATABASE_URL = (ENV("DATABASE_URL", "") or "").strip()
-
-    # Reconstruir si viene por piezas (opcional)
-    if not DATABASE_URL:
-        u = (ENV("DB_USER", "") or "").strip()
-        p = (ENV("DB_PASSWORD", "") or "").strip()
-        h = (ENV("DB_HOST", "") or "").strip()
-        pt = (ENV("DB_PORT", "") or "").strip()
-        n = (ENV("DB_NAME", "") or "").strip()
-        if all([u, p, h, pt, n]):
-            DATABASE_URL = f"postgres://{u}:{p}@{h}:{pt}/{n}?sslmode=require"
-
-    if IS_PROD:
-        if not DATABASE_URL:
-            raise RuntimeError("DATABASE_URL no está definido. Configura la URL del pooler de Supabase.")
-        import dj_database_url  # type: ignore
-        DATABASES = {
-            "default": dj_database_url.config(
-                default=DATABASE_URL,
-                conn_max_age=600,
-                ssl_require=True,
-            )
+    # Local development database
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
-    else:
-        if DATABASE_URL:
-            import dj_database_url  # type: ignore
-            DATABASES = {
-                "default": dj_database_url.config(
-                    default=DATABASE_URL,
-                    conn_max_age=0,
-                    ssl_require=False,
-                )
-            }
-        else:
-            DATABASES = {
-                "default": {
-                    "ENGINE": "django.db.backends.sqlite3",
-                    "NAME": BASE_DIR / "db.sqlite3",
-                }
-            }
+    }
 
-
-# --------------------
-# Password policies
-# --------------------
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
-# --------------------
-# Internacionalización
-# --------------------
-LANGUAGE_CODE = "es-es"
-TIME_ZONE = ENV("TIME_ZONE", "Europe/Madrid")
+# Internationalization
+LANGUAGE_CODE = 'es-es'
+TIME_ZONE = 'Europe/Madrid'
 USE_I18N = True
 USE_TZ = True
 
-# --------------------
-# Estáticos / Media
-# --------------------
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Additional static files directories
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# --------------------
-# Seguridad extra prod
-# --------------------
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Security settings for production
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = str(ENV("SECURE_SSL_REDIRECT", "true")).lower() == "true"
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
 
-# --------------------
-# Logging consola
-# --------------------
+# Session configuration
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Logging configuration
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "root": {"handlers": ["console"], "level": ENV("LOG_LEVEL", "INFO")},
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
 }
