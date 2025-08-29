@@ -1,5 +1,12 @@
 {
   "version": 2,
+
+  "functions": {
+    "api/**/*.py": {
+      "runtime": "python3.12"
+    }
+  },
+
   "builds": [
     { "src": "api/wsgi.py", "use": "@vercel/python@3" },
     {
@@ -11,6 +18,7 @@
       }
     }
   ],
+
   "routes": [
     {
       "src": "/static/(.*)",
