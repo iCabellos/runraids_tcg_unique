@@ -2,27 +2,48 @@ import json
 import os
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from core.models import (
-    ResourceType, BuildingType, Rarity, Ability, Hero, Enemy, Member,
-    PlayerResource, PlayerHero, BuildingLevelCost, PlayerBuilding
-)
+
+# Try to import models, handle gracefully if not available
+try:
+    from core.models import (
+        ResourceType, BuildingType, Rarity, Ability, Hero, Enemy, Member,
+        PlayerResource, PlayerHero, BuildingLevelCost, PlayerBuilding
+    )
+    models_available = True
+except ImportError as e:
+    models_available = False
+    import_error = str(e)
 
 
 class Command(BaseCommand):
     help = 'Load initial data from JSON file'
 
     def handle(self, *args, **options):
-        # Path to the JSON file
-        json_file_path = os.path.join(settings.BASE_DIR, 'initial_data.json')
-        
-        if not os.path.exists(json_file_path):
+        if not models_available:
             self.stdout.write(
-                self.style.ERROR(f'JSON file not found: {json_file_path}')
+                self.style.ERROR(f'Models not available: {import_error}')
             )
+            self.stdout.write('Skipping initial data loading...')
             return
 
-        with open(json_file_path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
+        # Path to the JSON file
+        json_file_path = os.path.join(settings.BASE_DIR, 'initial_data.json')
+
+        if not os.path.exists(json_file_path):
+            self.stdout.write(
+                self.style.WARNING(f'JSON file not found: {json_file_path}')
+            )
+            self.stdout.write('Skipping initial data loading...')
+            return
+
+        try:
+            with open(json_file_path, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Error reading JSON file: {e}')
+            )
+            return
 
         self.stdout.write('Loading initial data...')
 
