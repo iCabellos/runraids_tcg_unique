@@ -62,22 +62,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api.wsgi.app'
 
-# Database configuration for Vercel
-# Uses PostgreSQL in production, SQLite for local development
-if os.environ.get('POSTGRES_URL'):
-    # Production database (Vercel Postgres)
+# Database configuration
+# Priority: DATABASE_URL > POSTGRES_URL > SQLite (fallback)
+database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+
+if database_url:
+    # PostgreSQL database (Supabase, Vercel Postgres, etc.)
     import dj_database_url
     DATABASES = {
-        'default': dj_database_url.parse(os.environ.get('POSTGRES_URL'))
+        'default': dj_database_url.parse(database_url)
     }
+    print(f"Using PostgreSQL database: {database_url.split('@')[1] if '@' in database_url else 'configured'}")
 else:
-    # Local development database
+    # Local development database (SQLite fallback)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print("Using SQLite database for local development")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
