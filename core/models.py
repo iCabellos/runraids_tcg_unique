@@ -30,18 +30,23 @@ class Member(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        # Hash password if it's not already hashed
         if not self.password_member.startswith("pbkdf2_sha256$"):
             self.password_member = make_password(self.password_member)
-        super().save(*args, **kwargs)
 
-        super().save(*args, **kwargs)
+        # Check if this is a new member
         is_new = self.pk is None
-        has_buildings = PlayerBuilding.objects.filter(member=self).exists()
 
-        if is_new or not has_buildings:
+        # Save the member first
+        super().save(*args, **kwargs)
+
+        # Create default buildings for new members
+        if is_new:
+            # Ensure building types exist
             for type_choice, name in BuildingTypeChoices.choices:
                 BuildingType.objects.get_or_create(type=type_choice, defaults={"name": name})
 
+            # Create default camp building
             camp_type = BuildingType.objects.get(type=BuildingTypeChoices.CAMP)
             PlayerBuilding.objects.get_or_create(member=self, building_type=camp_type, defaults={"level": 1})
 
