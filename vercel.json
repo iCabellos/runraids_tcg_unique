@@ -1,23 +1,22 @@
 {
   "version": 2,
-  "buildCommand": "bash build_files.sh",
-  "outputDirectory": "staticfiles_build",
-
-  "functions": {
-    "api/**/*.py": { "runtime": "python3.11" }
-  },
-
+  "builds": [
+    { "src": "api/wsgi.py", "use": "@vercel/python@3" },
+    {
+      "src": "build_files.sh",
+      "use": "@vercel/static-build@1",
+      "config": {
+        "buildCommand": "bash build_files.sh",
+        "distDir": "staticfiles_build"
+      }
+    }
+  ],
   "routes": [
     {
       "src": "/static/(.*)",
       "dest": "/staticfiles_build/$1",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
     },
-    {
-      "src": "/(.*)",
-      "dest": "/api/server.py"
-    }
+    { "src": "/(.*)", "dest": "/api/wsgi.py" }
   ]
 }
