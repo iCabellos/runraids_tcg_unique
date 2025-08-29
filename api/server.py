@@ -1,6 +1,8 @@
-# api/wsgi.py (opcional, estándar)
+# api/server.py
 import os
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")
-application = get_wsgi_application()
+
+# Vercel busca exactamente `app` o `handler` a nivel módulo:
+app = get_wsgi_application()
