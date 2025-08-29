@@ -225,6 +225,14 @@ class Command(BaseCommand):
                         password_member=user_data['password']
                     )
                     self.stdout.write(f'Created new member: {member.name}')
+
+                    # Create default buildings for new member
+                    try:
+                        member.create_default_buildings()
+                        self.stdout.write(f'Created default buildings for: {member.name}')
+                    except Exception as e:
+                        self.stdout.write(f'Warning: Could not create buildings for {member.name}: {e}')
+
                 except Exception as e:
                     self.stdout.write(f'Error creating member {user_data["name"]}: {e}')
                     continue
