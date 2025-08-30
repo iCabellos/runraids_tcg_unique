@@ -30,20 +30,25 @@ class Member(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        # Hash password if it's not already hashed
         if not self.password_member.startswith("pbkdf2_sha256$"):
             self.password_member = make_password(self.password_member)
+
+        # Just save the member - building creation will be handled elsewhere
         super().save(*args, **kwargs)
 
-        super().save(*args, **kwargs)
-        is_new = self.pk is None
-        has_buildings = PlayerBuilding.objects.filter(member=self).exists()
+    def create_default_buildings(self):
+        """Create default buildings for this member. Call this after member is saved."""
+        # Import here to avoid circular import
+        from core.models import BuildingType, PlayerBuilding
 
-        if is_new or not has_buildings:
-            for type_choice, name in BuildingTypeChoices.choices:
-                BuildingType.objects.get_or_create(type=type_choice, defaults={"name": name})
+        # Ensure building types exist
+        for type_choice, name in BuildingTypeChoices.choices:
+            BuildingType.objects.get_or_create(type=type_choice, defaults={"name": name})
 
-            camp_type = BuildingType.objects.get(type=BuildingTypeChoices.CAMP)
-            PlayerBuilding.objects.get_or_create(member=self, building_type=camp_type, defaults={"level": 1})
+        # Create default camp building if it doesn't exist
+        camp_type = BuildingType.objects.get(type=BuildingTypeChoices.CAMP)
+        PlayerBuilding.objects.get_or_create(member=self, building_type=camp_type, defaults={"level": 1})
 
     def __str__(self):
         return f'Member: {self.id}, {self.name}'
@@ -210,11 +215,12 @@ class Hero(models.Model):
 class PlayerHero(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     hero = models.ForeignKey(Hero, on_delete=models.CASCADE)
-    current_hp = models.IntegerField()
-    exp = models.IntegerField(default=0)
+    current_hp = models.IntegerField(default=100)  # Default HP
+    level = models.IntegerField(default=1)  # Add level field
+    experience = models.IntegerField(default=0)  # Rename exp to experience
 
     def get_level(self):
-        return min(100, int((self.exp / 100) ** 0.6))
+        return self.level  # Use the level field directly
 
     @property
     def max_level(self):

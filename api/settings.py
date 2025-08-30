@@ -13,7 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-&9$1wr5oe9m(a6*=u_85*!mlpf%j&2(0ow6wd^4v#+ohy-*q8j')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+# Temporarily enabled for debugging production issues
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 # Vercel deployment hosts
 ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app', 'localhost']
@@ -62,22 +63,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api.wsgi.app'
 
-# Database configuration for Vercel
-# Uses PostgreSQL in production, SQLite for local development
-if os.environ.get('POSTGRES_URL'):
-    # Production database (Vercel Postgres)
+# Database configuration
+# Priority: DATABASE_URL > POSTGRES_URL > SQLite (fallback only if no env vars)
+database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+
+if database_url:
+    # PostgreSQL database (Supabase, Vercel Postgres, etc.)
     import dj_database_url
     DATABASES = {
-        'default': dj_database_url.parse(os.environ.get('POSTGRES_URL'))
+        'default': dj_database_url.parse(database_url)
     }
+    # Don't print sensitive connection info in production
+    if DEBUG:
+        host_info = database_url.split('@')[1].split('/')[0] if '@' in database_url else 'configured'
+        print(f"🗄️  Using PostgreSQL database: {host_info}")
+    else:
+        print("🗄️  Using PostgreSQL database")
 else:
-    # Local development database
+    # Fallback to SQLite only if no DATABASE_URL is provided
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print("⚠️  Using SQLite database (no DATABASE_URL found)")
+    if not DEBUG:
+        print("🚨 WARNING: Using SQLite in production is not recommended!")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -105,10 +117,12 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Additional static files directories
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+# Additional static files directories (only if the directory exists)
+static_dir = os.path.join(BASE_DIR, 'static')
+if os.path.exists(static_dir):
+    STATICFILES_DIRS = [static_dir]
+else:
+    STATICFILES_DIRS = []
 
 # Media files
 MEDIA_URL = '/media/'

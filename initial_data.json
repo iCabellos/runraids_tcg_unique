@@ -15,11 +15,11 @@
     {"type": "QUARRY", "name": "Cantera"}
   ],
   "rarities": [
-    {"type": "COMMON", "multiplier": 1.0},
-    {"type": "UNCOMMON", "multiplier": 1.2},
-    {"type": "RARE", "multiplier": 1.5},
-    {"type": "EPIC", "multiplier": 2.0},
-    {"type": "LEGENDARY", "multiplier": 3.0}
+    {"type": "COMMON"},
+    {"type": "UNCOMMON"},
+    {"type": "RARE"},
+    {"type": "EPIC"},
+    {"type": "LEGENDARY"}
   ],
   "abilities": [
     {
@@ -108,7 +108,7 @@
   "enemies": [
     {
       "name": "Goblin Salvaje",
-      "hp": 50,
+      "base_hp": 50,
       "attack": 25,
       "defense": 10,
       "speed": 30,
@@ -116,7 +116,7 @@
     },
     {
       "name": "Orc Guerrero",
-      "hp": 120,
+      "base_hp": 120,
       "attack": 45,
       "defense": 25,
       "speed": 20,
@@ -124,14 +124,40 @@
     },
     {
       "name": "Troll de las Montañas",
-      "hp": 200,
+      "base_hp": 200,
       "attack": 60,
       "defense": 40,
       "speed": 15,
       "description": "Un troll gigante de las montañas"
     }
   ],
+  "django_admin_users": [
+    {
+      "username": "admin",
+      "email": "admin@runraids.com",
+      "password": "admin",
+      "is_superuser": true,
+      "is_staff": true,
+      "first_name": "Admin",
+      "last_name": "User"
+    }
+  ],
   "test_users": [
+    {
+      "name": "TestMember",
+      "firstname": "Usuario",
+      "email": "test@runraids.com",
+      "phone": 555000001,
+      "password": "test123",
+      "resources": {
+        "Oro": 500,
+        "Madera": 250,
+        "Piedra": 150,
+        "Hierro": 100,
+        "Comida": 400
+      },
+      "heroes": ["Guerrero Novato"]
+    },
     {
       "name": "TestPlayer1",
       "firstname": "Jugador",
