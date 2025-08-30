@@ -1,0 +1,14 @@
+# Ignore files that might cause build conflicts
+build_files.sh
+build.sh
+vercel_build.py
+*.pyc
+__pycache__/
+.env
+.env.local
+db.sqlite3
+staticfiles/
+media/
+.git/
+.vscode/
+.idea/
