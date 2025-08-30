@@ -11,6 +11,7 @@ try:
         PlayerResource, PlayerHero, BuildingLevelCost, PlayerBuilding
     )
     from django.contrib.auth.models import User
+
     models_available = True
 except ImportError as e:
     models_available = False
