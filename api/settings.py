@@ -83,43 +83,23 @@ TEMPLATES = [
 WSGI_APPLICATION = 'api.wsgi.app'
 
 # Database configuration using Supabase
-# Load database variables from environment
-USER = os.getenv("user")
-PASSWORD = os.getenv("password")
-HOST = os.getenv("host")
-PORT = os.getenv("port")
-DBNAME = os.getenv("dbname")
+# Use DATABASE_URL directly as it's more reliable
+database_url = os.getenv('DATABASE_URL')
 
-# Try individual variables first, then fallback to DATABASE_URL
-if USER and PASSWORD and HOST and PORT and DBNAME:
-    # Use individual Supabase variables
+if database_url:
+    import dj_database_url
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': DBNAME,
-            'USER': USER,
-            'PASSWORD': PASSWORD,
-            'HOST': HOST,
-            'PORT': PORT,
-            'OPTIONS': {
-                'sslmode': 'require',
-            },
-        }
+        'default': dj_database_url.parse(database_url)
     }
-    print(f"🗄️  Using Supabase PostgreSQL: {HOST}:{PORT}")
+    # Add SSL requirement for Supabase
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
+    print(f"🗄️  Using DATABASE_URL: {database_url[:80]}...")
 else:
-    # Fallback to DATABASE_URL if individual variables not available
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url:
-        import dj_database_url
-        DATABASES = {
-            'default': dj_database_url.parse(database_url)
-        }
-        print("🗄️  Using DATABASE_URL")
-    else:
-        # Final fallback - empty databases for serverless
-        DATABASES = {}
-        print("⚠️  No database configuration found")
+    # Final fallback - empty databases for serverless
+    DATABASES = {}
+    print("⚠️  No DATABASE_URL found")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

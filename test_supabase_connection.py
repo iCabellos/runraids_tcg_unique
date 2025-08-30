@@ -23,15 +23,42 @@ print(f"Port: {PORT}")
 print(f"User: {USER}")
 print(f"Database: {DBNAME}")
 
-# Connect to the database
+# Try both methods - individual params and connection string
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+print(f"🔗 Method 1 - Individual parameters:")
+print(f"   user='{USER}'")
+print(f"   host='{HOST}'")
+print(f"   port='{PORT}'")
+print(f"   dbname='{DBNAME}'")
+
+print(f"\n🔗 Method 2 - Connection string:")
+print(f"   DATABASE_URL='{DATABASE_URL}'")
+
+# Try connection string first
 try:
-    connection = psycopg2.connect(
-        user=USER,
-        password=PASSWORD,
-        host=HOST,
-        port=PORT,
-        dbname=DBNAME
-    )
+    print(f"\n🔄 Trying connection string method...")
+    connection = psycopg2.connect(DATABASE_URL)
+    print("✅ Connection successful with DATABASE_URL!")
+
+except Exception as e:
+    print(f"❌ DATABASE_URL failed: {e}")
+
+    # Try individual parameters
+    try:
+        print(f"\n🔄 Trying individual parameters method...")
+        connection = psycopg2.connect(
+            user=USER,
+            password=PASSWORD,
+            host=HOST,
+            port=PORT,
+            dbname=DBNAME
+        )
+        print("✅ Connection successful with individual parameters!")
+
+    except Exception as e2:
+        print(f"❌ Individual parameters failed: {e2}")
+        raise e2
     print("✅ Connection successful!")
     
     # Create a cursor to execute SQL queries
