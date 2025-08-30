@@ -13,12 +13,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
 # Check if we're in production (Vercel) or development
+print(f"🔍 VERCEL_ENV: {os.environ.get('VERCEL_ENV')}")
+print(f"🔍 VERCEL: {os.environ.get('VERCEL')}")
+print(f"🔍 BASE_DIR: {BASE_DIR}")
+
 if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
     # Production - load .env.production
     env_file = BASE_DIR / '.env.production'
+    print(f"🔍 Looking for: {env_file}")
+    print(f"🔍 File exists: {env_file.exists()}")
+
     if env_file.exists():
         load_dotenv(env_file)
         print("🚀 Loaded .env.production for Vercel")
+        # Print file contents for debug
+        with open(env_file, 'r') as f:
+            content = f.read()
+            print(f"🔍 .env.production content: {content[:100]}...")
     else:
         print("⚠️  .env.production not found, using default .env")
         load_dotenv()
