@@ -1,5 +1,5 @@
 # Ignore files that might cause build conflicts
-build_files.sh
+# build_files.sh - COMMENTED OUT so it's not ignored
 build.sh
 vercel_build.py
 *.pyc
