@@ -1,14 +1,16 @@
 """
-WSGI config for runraids project - Vercel deployment.
+WSGI config for runraids project.
 
 It exposes the WSGI callable as a module-level variable named ``app``.
-This is required by Vercel's Python runtime.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/4.1/howto/deployment/wsgi/
 """
 
 import os
+
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
-# Vercel requires the WSGI application to be named 'app'
 app = get_wsgi_application()
