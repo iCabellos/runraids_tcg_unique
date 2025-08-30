@@ -1,10 +1,31 @@
 """
 Django settings for runraids project - Vercel deployment.
 
-Based on Vercel's official Django template.
+Based on Vercel's official Django template with Supabase integration.
+Uses .env files for all configuration.
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+# Check if we're in production (Vercel) or development
+if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
+    # Production - load .env.production
+    env_file = BASE_DIR / '.env.production'
+    if env_file.exists():
+        load_dotenv(env_file)
+        print("🚀 Loaded .env.production for Vercel")
+    else:
+        print("⚠️  .env.production not found, using default .env")
+        load_dotenv()
+else:
+    # Development - load .env
+    load_dotenv()
+    print("🔧 Loaded .env for local development")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -61,21 +82,44 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api.wsgi.app'
 
-# Database
-# Note: Django modules for using databases are not support in serverless
-# environments like Vercel. You can use a database over HTTP, hosted elsewhere.
+# Database configuration using Supabase
+# Load database variables from environment
+USER = os.getenv("user")
+PASSWORD = os.getenv("password")
+HOST = os.getenv("host")
+PORT = os.getenv("port")
+DBNAME = os.getenv("dbname")
 
-database_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
-
-if database_url:
-    # PostgreSQL database (Supabase, Vercel Postgres, etc.)
-    import dj_database_url
+# Try individual variables first, then fallback to DATABASE_URL
+if USER and PASSWORD and HOST and PORT and DBNAME:
+    # Use individual Supabase variables
     DATABASES = {
-        'default': dj_database_url.parse(database_url)
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DBNAME,
+            'USER': USER,
+            'PASSWORD': PASSWORD,
+            'HOST': HOST,
+            'PORT': PORT,
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
     }
+    print(f"🗄️  Using Supabase PostgreSQL: {HOST}:{PORT}")
 else:
-    # Following Vercel template - empty databases for serverless
-    DATABASES = {}
+    # Fallback to DATABASE_URL if individual variables not available
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        import dj_database_url
+        DATABASES = {
+            'default': dj_database_url.parse(database_url)
+        }
+        print("🗄️  Using DATABASE_URL")
+    else:
+        # Final fallback - empty databases for serverless
+        DATABASES = {}
+        print("⚠️  No database configuration found")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
