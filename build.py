@@ -13,15 +13,27 @@ BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
-try:
-    django.setup()
-    from django.core.management import execute_from_command_line
-    
-    print("Collecting static files...")
-    execute_from_command_line(['manage.py', 'collectstatic', '--noinput'])
-    print("Static files collected successfully!")
-    
-except Exception as e:
-    print(f"Warning: Could not collect static files: {e}")
-    # Don't fail the build for static files
-    pass
+def main():
+    try:
+        print("Setting up Django...")
+        django.setup()
+        from django.core.management import execute_from_command_line
+
+        print("Collecting static files...")
+        execute_from_command_line(['manage.py', 'collectstatic', '--noinput', '--clear'])
+        print("Static files collected successfully!")
+
+        # Create a simple index file to indicate build success
+        with open('build_success.txt', 'w') as f:
+            f.write('Build completed successfully')
+
+        return True
+
+    except Exception as e:
+        print(f"Warning: Could not collect static files: {e}")
+        # Don't fail the build for static files
+        return True
+
+if __name__ == '__main__':
+    success = main()
+    sys.exit(0 if success else 1)

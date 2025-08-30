@@ -1,6 +1,10 @@
 {
   "builds": [
     {
+      "src": "build.py",
+      "use": "@vercel/python"
+    },
+    {
       "src": "api/wsgi.py",
       "use": "@vercel/python"
     }
