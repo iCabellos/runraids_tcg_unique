@@ -65,16 +65,27 @@ try:
             try:
                 existing_tables = set(connection.introspection.table_names())
                 print(f"🧾 Tables present: {len(existing_tables)}")
+                # Core tables
                 if 'core_skill' not in existing_tables:
                     raise RuntimeError('core_skill table missing after migrate')
                 if 'core_hero' not in existing_tables:
                     raise RuntimeError('core_hero table missing after migrate')
                 if 'core_playerhero' not in existing_tables:
                     raise RuntimeError('core_playerhero table missing after migrate')
+                # Django contrib essentials
+                if 'django_migrations' not in existing_tables:
+                    raise RuntimeError('django_migrations table missing after migrate')
+                if 'auth_user' not in existing_tables:
+                    raise RuntimeError('auth_user table missing after migrate')
+                if 'django_session' not in existing_tables:
+                    raise RuntimeError('django_session table missing after migrate')
                 with connection.cursor() as c:
+                    # Probe expected columns
                     c.execute('SELECT codename FROM core_hero LIMIT 1')
                     c.execute('SELECT experience FROM core_playerhero LIMIT 1')
-                print('✅ Verified core tables and columns are present.')
+                    c.execute('SELECT 1 FROM auth_user LIMIT 1')
+                    c.execute('SELECT 1 FROM django_session LIMIT 1')
+                print('✅ Verified core and django contrib tables/columns are present.')
             except Exception as ve:
                 print(f"❌ Verification failed: {ve}. Trying migrate once more...")
                 try:
@@ -82,6 +93,8 @@ try:
                     with connection.cursor() as c:
                         c.execute('SELECT codename FROM core_hero LIMIT 1')
                         c.execute('SELECT experience FROM core_playerhero LIMIT 1')
+                        c.execute('SELECT 1 FROM auth_user LIMIT 1')
+                        c.execute('SELECT 1 FROM django_session LIMIT 1')
                     print('✅ Verified after second migrate.')
                 except Exception as ve2:
                     print(f"⚠️  Still failing verification: {ve2}")
