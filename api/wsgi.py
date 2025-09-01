@@ -32,7 +32,17 @@ try:
                     call_command('reset_db', '--yes')
                 except Exception as e:
                     print(f'⚠️  reset_db failed: {e}')
-                return
+                # After reset, ensure full migrate and data load
+                try:
+                    print('🔄 Applying migrations after reset...')
+                    call_command('migrate', '--noinput')
+                    print('✅ Migrations applied after reset.')
+                    print('📦 Loading initial data after reset...')
+                    call_command('load_initial_data')
+                    print('✅ Initial data loaded after reset.')
+                except Exception as e:
+                    print(f'⚠️  Post-reset migrate/data load issue: {e}')
+                # Do not return; continue to verification below
 
             existing_tables = set(connection.introspection.table_names())
             needs_migrate = False
@@ -69,6 +79,28 @@ try:
                     print('✅ Initial data ensured.')
                 except Exception as e:
                     print(f'⚠️  Initial data load skipped: {e}')
+
+            # Verification step: ensure critical tables/columns exist
+            try:
+                existing_tables = set(connection.introspection.table_names())
+                print(f"🧾 Tables present: {len(existing_tables)}")
+                if 'core_skill' not in existing_tables:
+                    raise RuntimeError('core_skill table missing after migrate')
+                if 'core_hero' not in existing_tables:
+                    raise RuntimeError('core_hero table missing after migrate')
+                with connection.cursor() as c:
+                    c.execute('SELECT codename FROM core_hero LIMIT 1')
+                print('✅ Verified core tables and columns are present.')
+            except Exception as ve:
+                print(f"❌ Verification failed: {ve}. Trying migrate once more...")
+                try:
+                    call_command('migrate', '--noinput')
+                    with connection.cursor() as c:
+                        c.execute('SELECT codename FROM core_hero LIMIT 1')
+                    print('✅ Verified after second migrate.')
+                except Exception as ve2:
+                    print(f"⚠️  Still failing verification: {ve2}")
+
             else:
                 # Optional: we can still ensure initial data existence without modifying existing
                 # but to avoid overhead on every cold start, we skip if tables exist.
