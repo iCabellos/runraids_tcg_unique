@@ -156,8 +156,14 @@ else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'core', 'media')
 
 # Whitenoise configuration for serving static files
-# Use Manifest storage so URLs are stable and hashed
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# On Vercel, serve directly from finders to avoid relying on collectstatic outputs from a separate build step
+if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
+    # Use non-manifest storage and enable finders so core/static and admin assets are served at runtime
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+    WHITENOISE_USE_FINDERS = True
+else:
+    # Locally we can use the manifest storage
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
