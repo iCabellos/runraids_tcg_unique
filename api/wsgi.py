@@ -69,8 +69,11 @@ try:
                     raise RuntimeError('core_skill table missing after migrate')
                 if 'core_hero' not in existing_tables:
                     raise RuntimeError('core_hero table missing after migrate')
+                if 'core_playerhero' not in existing_tables:
+                    raise RuntimeError('core_playerhero table missing after migrate')
                 with connection.cursor() as c:
                     c.execute('SELECT codename FROM core_hero LIMIT 1')
+                    c.execute('SELECT experience FROM core_playerhero LIMIT 1')
                 print('✅ Verified core tables and columns are present.')
             except Exception as ve:
                 print(f"❌ Verification failed: {ve}. Trying migrate once more...")
@@ -78,6 +81,7 @@ try:
                     call_command('migrate', '--noinput')
                     with connection.cursor() as c:
                         c.execute('SELECT codename FROM core_hero LIMIT 1')
+                        c.execute('SELECT experience FROM core_playerhero LIMIT 1')
                     print('✅ Verified after second migrate.')
                 except Exception as ve2:
                     print(f"⚠️  Still failing verification: {ve2}")
