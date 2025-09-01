@@ -59,7 +59,12 @@ try:
                             c.execute('SELECT 1 FROM core_hero LIMIT 1')
                     except Exception:
                         needs_migrate = True
-            # Allow forcing a full reset via env on next deploy
+            # Allow forcing migrations on cold start
+            mig_on_start = (os.environ.get('MIGRATE_ON_START', '0').lower() in {'1','true','yes'})
+            if mig_on_start:
+                print('🧰 MIGRATE_ON_START=1 → applying migrations now...')
+                needs_migrate = True
+            # Allow forcing a full reset via env on next deploy or explicit force
             if os.environ.get('FORCE_MIGRATIONS') == '1':
                 print('🧰 FORCE_MIGRATIONS=1 → applying migrations now...')
                 needs_migrate = True
@@ -109,7 +114,9 @@ try:
             # Never break app startup because of setup. Log and continue.
             print(f'⚠️  Startup DB ensure skipped due to error: {e}')
 
+    print('🟢 Starting ensure_db_ready (cold start) ...')
     ensure_db_ready()
+    print('🟢 Finished ensure_db_ready.')
 except Exception as _e:
     # If any import fails (e.g., during collectstatic or build), do nothing
     pass
