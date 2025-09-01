@@ -84,7 +84,7 @@ class EnemyAdmin(admin.ModelAdmin):
 
 @admin.register(PlayerHero)
 class PlayerHeroAdmin(admin.ModelAdmin):
-    list_display = ("member", "hero", "current_hp", "experience")
+    list_display = ("member", "hero", "level", "experience")
     search_fields = ("member__name", "hero__name")
 
 
@@ -115,6 +115,5 @@ class AllianceBuildingAdmin(admin.ModelAdmin):
 
 @admin.register(Friendship)
 class FriendshipAdmin(admin.ModelAdmin):
-    list_display = ("sender", "receiver", "accepted", "created_at")
-    list_filter = ("accepted",)
-    search_fields = ("sender__name", "receiver__name")
+    list_display = ("member_a", "member_b", "created_at")
+    search_fields = ("member_a__name", "member_b__name")

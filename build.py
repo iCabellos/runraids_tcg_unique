@@ -25,20 +25,20 @@ def main():
 
         # Try to run migrations and load initial data
         try:
-            print("Making migrations for 'core'...")
-            execute_from_command_line(['manage.py', 'makemigrations', 'core', '--noinput'])
-            print("Applying migrations...")
-            execute_from_command_line(['manage.py', 'migrate', '--noinput'])
-            print("Migrations applied.")
+            if os.environ.get('RESET_DB') == '1':
+                print('🧨 RESET_DB=1 detected in build → hard reset DB...')
+                execute_from_command_line(['manage.py', 'reset_db', '--yes'])
+            else:
+                print("Making migrations for 'core'...")
+                execute_from_command_line(['manage.py', 'makemigrations', 'core', '--noinput'])
+                print("Applying migrations...")
+                execute_from_command_line(['manage.py', 'migrate', '--noinput'])
+                print("Migrations applied.")
+                print("Loading initial data if available...")
+                execute_from_command_line(['manage.py', 'load_initial_data'])
+                print("Initial data loaded.")
         except Exception as me:
-            print(f"Warning: migration step failed: {me}")
-
-        try:
-            print("Loading initial data if available...")
-            execute_from_command_line(['manage.py', 'load_initial_data'])
-            print("Initial data loaded.")
-        except Exception as le:
-            print(f"Info: load_initial_data not executed: {le}")
+            print(f"Warning: migration/initial data step failed: {me}")
 
         # Create a simple index file to indicate build success
         with open('build_success.txt', 'w') as f:

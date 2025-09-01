@@ -25,6 +25,15 @@ try:
 
     def ensure_db_ready():
         try:
+            # One-off hard reset if requested via env
+            if os.environ.get('RESET_DB') == '1':
+                print('🧨 RESET_DB=1 detected → resetting database...')
+                try:
+                    call_command('reset_db', '--yes')
+                except Exception as e:
+                    print(f'⚠️  reset_db failed: {e}')
+                return
+
             existing_tables = set(connection.introspection.table_names())
             if 'auth_user' not in existing_tables or 'django_migrations' not in existing_tables:
                 print('🔄 No core tables found. Running migrations...')
