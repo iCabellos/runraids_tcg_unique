@@ -87,7 +87,7 @@ class EnemyAdmin(admin.ModelAdmin):
 
 @admin.register(PlayerHero)
 class PlayerHeroAdmin(admin.ModelAdmin):
-    list_display = ("member", "hero", "current_hp", "exp")
+    list_display = ("member", "hero", "current_hp", "experience")
     search_fields = ("member__name", "hero__name")
 
 
