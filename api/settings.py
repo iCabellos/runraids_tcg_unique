@@ -104,10 +104,12 @@ if database_url:
     DATABASES = {
         'default': dj_database_url.parse(database_url, conn_max_age=60)
     }
-    # Add SSL requirement for Supabase
-    DATABASES['default']['OPTIONS'] = {
+    # Add SSL requirement and timeouts for Supabase
+    options = DATABASES['default'].setdefault('OPTIONS', {})
+    options.update({
         'sslmode': 'require',
-    }
+        'connect_timeout': 10,
+    })
     print(f"🗄️  Using DATABASE_URL: {database_url[:80]}...")
 else:
     # Final fallback - empty databases for serverless
