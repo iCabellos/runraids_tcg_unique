@@ -1,12 +1,12 @@
 [
   {
-    "codename": "novato",
     "name": "Novato",
+    "codename": "novato",
     "description": "Héroe básico de prueba.",
-    "image": "img/Base_hero_female.png",
+    "image": null,
     "race": "elf",
     "klass": "mage",
-    "rarity": 1,
+    "rarity": "common",
     "primary_mechanic": "combat",
     "damage_profile": "magical",
     "subrole": "dps",
@@ -17,6 +17,9 @@
     "base_def_phy": 5,
     "base_speed": 10,
     "base_crit_chance": 0.05,
-    "abilities": ["Descarga Arcana", "Escudo Etéreo", "Luz de Umbral"]
+    "base_crit_damage": 1.5,
+    "rage_max": 100,
+    "starting_rage": 0,
+    "abilities": ["Descarga Arcana", "Tormenta de Maná", "Foco Arcano", "Fractura Etérea"]
   }
 ]

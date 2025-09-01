@@ -1,5 +1,6 @@
 [
-  {"type": 1},
-  {"type": 2},
-  {"type": 3}
+  {"type": "common"},
+  {"type": "rare"},
+  {"type": "epic"},
+  {"type": "legendary"}
 ]

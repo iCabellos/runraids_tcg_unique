@@ -1,14 +1,20 @@
 [
-  {"name": "Cabellos", "firstname": "Ivan", "password": "test1234", "email": "ivan@example.com", "phone": 600000001,
-    "resources": {"Oro": 1000, "Madera": 500, "Elixir": 300},
+  {
+    "name": "Cabellos",
+    "firstname": "Ivan",
+    "email": "ivan@example.com",
+    "phone": 600000001,
+    "password": "test1234",
+    "resources": {"Oro": 1000, "Madera": 500, "Elixir": 200},
     "heroes": ["Novato"]
   },
-  {"name": "Doe", "firstname": "John", "password": "test1234", "email": "john@example.com", "phone": 600000002,
+  {
+    "name": "Doe",
+    "firstname": "John",
+    "email": "john@example.com",
+    "phone": 600000002,
+    "password": "test1234",
     "resources": {"Oro": 800, "Madera": 400},
-    "heroes": []
-  },
-  {"name": "Smith", "firstname": "Jane", "password": "test1234", "email": "jane@example.com", "phone": 600000003,
-    "resources": {"Oro": 600, "Madera": 200},
     "heroes": []
   }
 ]

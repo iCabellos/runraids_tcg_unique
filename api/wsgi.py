@@ -25,67 +25,43 @@ try:
 
     def ensure_db_ready():
         try:
-            # One-off hard reset if requested via env
-            if os.environ.get('RESET_DB') == '1':
-                print('🧨 RESET_DB=1 detected → resetting database...')
-                try:
-                    call_command('reset_db', '--yes')
-                except Exception as e:
-                    print(f'⚠️  reset_db failed: {e}')
-                # After reset, ensure full migrate and data load
-                try:
-                    print('🔄 Applying migrations after reset...')
-                    call_command('migrate', '--noinput')
-                    print('✅ Migrations applied after reset.')
-                    print('📦 Loading initial data after reset...')
-                    call_command('load_initial_data')
-                    print('✅ Initial data loaded after reset.')
-                except Exception as e:
-                    print(f'⚠️  Post-reset migrate/data load issue: {e}')
-                # Do not return; continue to verification below
+            # Always perform a hard reset on cold start, as requested
+            print('🧨 Always resetting database on cold start...')
+            try:
+                call_command('reset_db', '--yes')
+            except Exception as e:
+                print(f'⚠️  reset_db failed (continuing): {e}')
 
-            existing_tables = set(connection.introspection.table_names())
-            needs_migrate = False
-            if 'django_migrations' not in existing_tables:
-                needs_migrate = True
-            else:
-                # If key core tables missing or model columns missing, force migrate
-                if 'core_skill' not in existing_tables or 'core_hero' not in existing_tables:
-                    needs_migrate = True
-                else:
-                    try:
-                        with connection.cursor() as c:
-                            # Probe for columns that should exist; ignore errors
-                            c.execute('SELECT 1 FROM core_hero LIMIT 1')
-                    except Exception:
-                        needs_migrate = True
-            # Allow forcing migrations on cold start
-            mig_on_start = (os.environ.get('MIGRATE_ON_START', '0').lower() in {'1','true','yes'})
-            if mig_on_start:
-                print('🧰 MIGRATE_ON_START=1 → applying migrations now...')
-                needs_migrate = True
-            # Allow forcing a full reset via env on next deploy or explicit force
-            if os.environ.get('FORCE_MIGRATIONS') == '1':
-                print('🧰 FORCE_MIGRATIONS=1 → applying migrations now...')
-                needs_migrate = True
-            if needs_migrate:
-                print('🔄 Ensuring migrations are applied...')
-                # Try a lightweight makemigrations (no-op if up-to-date)
+            # Apply migrations and load initial data
+            try:
+                print('🔄 Applying migrations...')
+                # Ensure migration files are up-to-date; remove placeholder migration if present
                 try:
+                    import os as _os
+                    from pathlib import Path as _Path
+                    mig_path = _Path(__file__).resolve().parents[1] / 'core' / 'migrations' / '0001_initial.py'
+                    if mig_path.exists():
+                        with open(mig_path, 'r', encoding='utf-8') as _f:
+                            _content = _f.read().strip()
+                        if _content.startswith('# intentionally empty'):
+                            print('🧹 Removing placeholder migration core/migrations/0001_initial.py...')
+                            try:
+                                _os.remove(mig_path)
+                            except Exception as _re:
+                                print(f'⚠️  Could not remove placeholder migration: {_re}')
+                    # Now (re)generate migrations
                     call_command('makemigrations', 'core', '--noinput')
-                except Exception:
-                    pass
+                except Exception as _me:
+                    print(f'⚠️  makemigrations issue (continuing): {_me}')
                 call_command('migrate', '--noinput')
-                print('✅ Migrations completed.')
-                # Load initial data only after migrations, non-destructive
-                try:
-                    print('📦 Loading initial data (idempotent)...')
-                    call_command('load_initial_data')
-                    print('✅ Initial data ensured.')
-                except Exception as e:
-                    print(f'⚠️  Initial data load skipped: {e}')
+                print('✅ Migrations applied.')
+                print('📦 Loading initial data...')
+                call_command('load_initial_data')
+                print('✅ Initial data loaded.')
+            except Exception as e:
+                print(f'⚠️  Migrate/initial data step issue: {e}')
 
-            # Verification step: ensure critical tables/columns exist
+            # Verification step
             try:
                 existing_tables = set(connection.introspection.table_names())
                 print(f"🧾 Tables present: {len(existing_tables)}")
@@ -105,11 +81,6 @@ try:
                     print('✅ Verified after second migrate.')
                 except Exception as ve2:
                     print(f"⚠️  Still failing verification: {ve2}")
-
-            else:
-                # Optional: we can still ensure initial data existence without modifying existing
-                # but to avoid overhead on every cold start, we skip if tables exist.
-                pass
         except Exception as e:
             # Never break app startup because of setup. Log and continue.
             print(f'⚠️  Startup DB ensure skipped due to error: {e}')

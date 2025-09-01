@@ -1,4 +1,18 @@
 [
-  {"building_type": "hq", "level": 2, "costs": [{"resource": "Oro", "amount": 500}, {"resource": "Madera", "amount": 200}]},
-  {"building_type": "camp", "level": 2, "costs": [{"resource": "Oro", "amount": 300}, {"resource": "Madera", "amount": 150}]}
+  {
+    "building_type": "camp",
+    "level": 2,
+    "costs": [
+      {"resource": "Oro", "amount": 100},
+      {"resource": "Madera", "amount": 50}
+    ]
+  },
+  {
+    "building_type": "hq",
+    "level": 2,
+    "costs": [
+      {"resource": "Oro", "amount": 200},
+      {"resource": "Elixir", "amount": 25}
+    ]
+  }
 ]
