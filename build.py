@@ -23,6 +23,21 @@ def main():
         execute_from_command_line(['manage.py', 'collectstatic', '--noinput', '--clear'])
         print("Static files collected successfully!")
 
+        # Try to run migrations and load initial data
+        try:
+            print("Applying migrations...")
+            execute_from_command_line(['manage.py', 'migrate', '--noinput'])
+            print("Migrations applied.")
+        except Exception as me:
+            print(f"Warning: migrate failed: {me}")
+
+        try:
+            print("Loading initial data if available...")
+            execute_from_command_line(['manage.py', 'load_initial_data'])
+            print("Initial data loaded.")
+        except Exception as le:
+            print(f"Info: load_initial_data not executed: {le}")
+
         # Create a simple index file to indicate build success
         with open('build_success.txt', 'w') as f:
             f.write('Build completed successfully')

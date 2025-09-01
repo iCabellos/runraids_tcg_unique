@@ -11,32 +11,20 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
-# Check if we're in production (Vercel) or development
-print(f"🔍 VERCEL_ENV: {os.environ.get('VERCEL_ENV')}")
-print(f"🔍 VERCEL: {os.environ.get('VERCEL')}")
-print(f"🔍 BASE_DIR: {BASE_DIR}")
-
+# Load environment variables
+# For local development, load from .env file
+# For production (Vercel), use environment variables directly
 if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
-    # Production - load .env.production
-    env_file = BASE_DIR / '.env.production'
-    print(f"🔍 Looking for: {env_file}")
-    print(f"🔍 File exists: {env_file.exists()}")
-
-    if env_file.exists():
-        load_dotenv(env_file)
-        print("🚀 Loaded .env.production for Vercel")
-        # Print file contents for debug
-        with open(env_file, 'r') as f:
-            content = f.read()
-            print(f"🔍 .env.production content: {content[:100]}...")
-    else:
-        print("⚠️  .env.production not found, using default .env")
-        load_dotenv()
+    # Production - prefer environment variables, but load .env.production if present
+    print("🚀 Running on Vercel - using environment variables")
+    env_prod_path = BASE_DIR / '.env.production'
+    if env_prod_path.exists():
+        load_dotenv(dotenv_path=env_prod_path)
+        print("📦 Loaded .env.production")
 else:
     # Development - load .env
     load_dotenv()
-    print("🔧 Loaded .env for local development")
+    print("🔧 Local development - loaded .env file")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,7 +36,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-&9$1wr5oe9m(a6*=u_85*
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 # Vercel deployment hosts (following official template)
-ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app']
+# CSRF trusted origins for POST requests from Vercel domains
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
 
 # Application definition
 INSTALLED_APPS = [
@@ -94,13 +84,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'api.wsgi.app'
 
 # Database configuration using Supabase
-# Use DATABASE_URL directly as it's more reliable
+# Prefer DATABASE_URL; fallback to individual parameters if needed
+import dj_database_url
+
 database_url = os.getenv('DATABASE_URL')
 
+if not database_url:
+    # Construct from individual env vars if provided
+    USER = os.getenv('user')
+    PASSWORD = os.getenv('password')
+    HOST = os.getenv('host')
+    PORT = os.getenv('port')
+    DBNAME = os.getenv('dbname')
+    if all([USER, PASSWORD, HOST, PORT, DBNAME]):
+        database_url = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
+        print("ℹ️ Constructed DATABASE_URL from individual env vars")
+
 if database_url:
-    import dj_database_url
     DATABASES = {
-        'default': dj_database_url.parse(database_url)
+        'default': dj_database_url.parse(database_url, conn_max_age=60)
     }
     # Add SSL requirement for Supabase
     DATABASES['default']['OPTIONS'] = {
