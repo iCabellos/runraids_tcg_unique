@@ -39,7 +39,7 @@ else:
     # Simple fallback view
     from django.http import HttpResponse
     def simple_view(request):
-        return HttpResponse("RunRaids TCG - Core app not available")
+        return HttpResponse("RunRaids - Core app not available")
 
     urlpatterns += [
         path('', simple_view, name="fallback"),

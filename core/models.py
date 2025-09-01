@@ -356,6 +356,19 @@ class Skill(models.Model):
     def __str__(self):
         return self.name
 
+    # Compatibilidad con código legado: mapear "power" a base_value
+    @property
+    def power(self) -> float:
+        try:
+            return float(self.base_value)
+        except Exception:
+            return 0.0
+
+
+# Proxy de compatibilidad para código legado que espera Ability
+class Ability(Skill):
+    class Meta:
+        proxy = True
 
 # =============================================================
 #  HÉROES
@@ -658,6 +671,11 @@ class Enemy(models.Model):
     speed = models.IntegerField()
     skills = models.ManyToManyField("Skill", blank=True)
     created_at = models.DateTimeField(default=now)
+
+    # Compat: algunos módulos usan enemy.abilities
+    @property
+    def abilities(self):
+        return self.skills
 
     def __str__(self):
         return f'{self.name} (lvl {self.level})'
