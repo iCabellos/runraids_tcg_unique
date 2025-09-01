@@ -13,8 +13,6 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
-app = get_wsgi_application()
-
 # One-time safety net: if core auth tables are missing (fresh DB),
 # apply migrations and load initial data. This is idempotent and will not
 # overwrite existing records because our load_initial_data uses get_or_create
@@ -53,6 +51,14 @@ try:
                     call_command('makemigrations', 'core', '--noinput')
                 except Exception as _me:
                     print(f'⚠️  makemigrations issue (continuing): {_me}')
+                # Migrate essential contrib apps first to ensure auth/session tables exist
+                try:
+                    call_command('migrate', 'contenttypes', '--noinput')
+                    call_command('migrate', 'auth', '--noinput')
+                    call_command('migrate', 'admin', '--noinput')
+                    call_command('migrate', 'sessions', '--noinput')
+                except Exception as _ce:
+                    print(f'⚠️  Contrib migrate issue (continuing to full migrate): {_ce}')
                 call_command('migrate', '--noinput')
                 print('✅ Migrations applied.')
                 print('📦 Loading initial data...')
@@ -108,3 +114,6 @@ try:
 except Exception as _e:
     # If any import fails (e.g., during collectstatic or build), do nothing
     pass
+
+# Now create the WSGI application after DB is ready
+app = get_wsgi_application()
