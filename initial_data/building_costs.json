@@ -1,0 +1,4 @@
+[
+  {"building_type": "hq", "level": 2, "costs": [{"resource": "Oro", "amount": 500}, {"resource": "Madera", "amount": 200}]},
+  {"building_type": "camp", "level": 2, "costs": [{"resource": "Oro", "amount": 300}, {"resource": "Madera", "amount": 150}]}
+]

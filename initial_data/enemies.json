@@ -1,0 +1,4 @@
+[
+  {"name": "Goblin Rastreador", "base_hp": 40, "attack": 8, "defense": 3, "speed": 12, "description": "Goblin rápido y escurridizo."},
+  {"name": "Orco Guerrero", "base_hp": 120, "attack": 20, "defense": 10, "speed": 6, "description": "Bruto de combate cuerpo a cuerpo."}
+]

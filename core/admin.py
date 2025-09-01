@@ -7,17 +7,16 @@ from core.models import (
     BuildingLevelCost,
     PlayerBuilding,
     Rarity,
-    Ability,
+    Skill,
     Hero,
     Enemy,
     PlayerHero,
-    RaidEvent,
-    RaidParticipation,
     Alliance,
     AllianceMember,
     AllianceSettings,
     AllianceBuilding,
-    Friendship
+    Friendship,
+    HeroSkill
 )
 
 
@@ -59,10 +58,10 @@ class PlayerBuildingAdmin(admin.ModelAdmin):
     search_fields = ("member__name",)
 
 
-@admin.register(Ability)
-class AbilityAdmin(admin.ModelAdmin):
-    list_display = ("name", "type", "power")
-    list_filter = ("type",)
+@admin.register(Skill)
+class SkillAdmin(admin.ModelAdmin):
+    list_display = ("name", "effect_type", "target", "damage_profile", "rage_gain", "rage_cost")
+    list_filter = ("effect_type", "target", "damage_profile")
     search_fields = ("name",)
 
 
@@ -73,15 +72,13 @@ class AbilityAdmin(admin.ModelAdmin):
 
 @admin.register(Hero)
 class HeroAdmin(admin.ModelAdmin):
-    list_display = ("name", "base_hp", "base_attack", "base_defense", "base_speed")
-    filter_horizontal = ("abilities",)
-    search_fields = ("name",)
+    list_display = ("name", "base_hp", "base_atk_mag", "base_def_mag", "base_speed")
+    search_fields = ("name", "codename")
 
 
 @admin.register(Enemy)
 class EnemyAdmin(admin.ModelAdmin):
     list_display = ("name", "base_hp", "attack", "defense", "speed")
-    filter_horizontal = ("abilities",)
     search_fields = ("name",)
 
 
@@ -91,15 +88,6 @@ class PlayerHeroAdmin(admin.ModelAdmin):
     search_fields = ("member__name", "hero__name")
 
 
-@admin.register(RaidEvent)
-class RaidEventAdmin(admin.ModelAdmin):
-    list_display = ("name", "enemy_name", "start_time", "end_time")
-
-
-@admin.register(RaidParticipation)
-class RaidParticipationAdmin(admin.ModelAdmin):
-    list_display = ("member", "raid", "damage_done", "joined_at")
-    search_fields = ("member__name", "raid__name")
 
 
 @admin.register(Alliance)

@@ -1,0 +1,5 @@
+[
+  {"name": "Descarga Arcana", "type": "damage", "power": 50, "description": "Daño mágico básico."},
+  {"name": "Escudo Etéreo", "type": "buff", "power": 0, "description": "Aumenta defensa mágica."},
+  {"name": "Luz de Umbral", "type": "heal", "power": 25, "description": "Curación dirigida."}
+]

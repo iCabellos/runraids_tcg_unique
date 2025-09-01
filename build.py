@@ -25,11 +25,13 @@ def main():
 
         # Try to run migrations and load initial data
         try:
+            print("Making migrations for 'core'...")
+            execute_from_command_line(['manage.py', 'makemigrations', 'core', '--noinput'])
             print("Applying migrations...")
             execute_from_command_line(['manage.py', 'migrate', '--noinput'])
             print("Migrations applied.")
         except Exception as me:
-            print(f"Warning: migrate failed: {me}")
+            print(f"Warning: migration step failed: {me}")
 
         try:
             print("Loading initial data if available...")
