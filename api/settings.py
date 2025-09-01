@@ -149,7 +149,11 @@ STATICFILES_DIRS = [
 
 # Media files (uploads from ImageField/FileField)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'core', 'media')
+# In Vercel serverless runtime, the filesystem is read-only; use /tmp for uploads
+if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
+    MEDIA_ROOT = '/tmp/media'
+else:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'core', 'media')
 
 # Whitenoise configuration for serving static files
 # Use Manifest storage so URLs are stable and hashed
