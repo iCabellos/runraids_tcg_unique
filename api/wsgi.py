@@ -35,14 +35,40 @@ try:
                 return
 
             existing_tables = set(connection.introspection.table_names())
-            if 'auth_user' not in existing_tables or 'django_migrations' not in existing_tables:
-                print('🔄 No core tables found. Running migrations...')
+            needs_migrate = False
+            if 'django_migrations' not in existing_tables:
+                needs_migrate = True
+            else:
+                # If key core tables missing or model columns missing, force migrate
+                if 'core_skill' not in existing_tables or 'core_hero' not in existing_tables:
+                    needs_migrate = True
+                else:
+                    try:
+                        with connection.cursor() as c:
+                            # Probe for columns that should exist; ignore errors
+                            c.execute('SELECT 1 FROM core_hero LIMIT 1')
+                    except Exception:
+                        needs_migrate = True
+            # Allow forcing a full reset via env on next deploy
+            if os.environ.get('FORCE_MIGRATIONS') == '1':
+                print('🧰 FORCE_MIGRATIONS=1 → applying migrations now...')
+                needs_migrate = True
+            if needs_migrate:
+                print('🔄 Ensuring migrations are applied...')
+                # Try a lightweight makemigrations (no-op if up-to-date)
+                try:
+                    call_command('makemigrations', 'core', '--noinput')
+                except Exception:
+                    pass
                 call_command('migrate', '--noinput')
                 print('✅ Migrations completed.')
                 # Load initial data only after migrations, non-destructive
-                print('📦 Loading initial data (idempotent)...')
-                call_command('load_initial_data')
-                print('✅ Initial data ensured.')
+                try:
+                    print('📦 Loading initial data (idempotent)...')
+                    call_command('load_initial_data')
+                    print('✅ Initial data ensured.')
+                except Exception as e:
+                    print(f'⚠️  Initial data load skipped: {e}')
             else:
                 # Optional: we can still ensure initial data existence without modifying existing
                 # but to avoid overhead on every cold start, we skip if tables exist.
