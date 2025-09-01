@@ -101,15 +101,8 @@ class Command(BaseCommand):
                 user.save()
                 self.stdout.write(f'Created Django admin user: {user.username}')
             else:
-                # Update existing user
-                user.email = admin_data['email']
-                user.first_name = admin_data.get('first_name', '')
-                user.last_name = admin_data.get('last_name', '')
-                user.is_superuser = admin_data.get('is_superuser', False)
-                user.is_staff = admin_data.get('is_staff', False)
-                user.set_password(admin_data['password'])
-                user.save()
-                self.stdout.write(f'Updated Django admin user: {user.username}')
+                # Non-destructive: do not overwrite existing admin users
+                self.stdout.write(f'Skipped updating existing Django admin user: {user.username}')
 
         # Load Resource Types
         self.stdout.write('Loading resource types...')
@@ -202,19 +195,8 @@ class Command(BaseCommand):
 
             if existing_member:
                 self.stdout.write(f'Member already exists: {existing_member.name} (phone: {existing_member.phone})')
-                # Update existing member instead of creating new one
+                # Non-destructive: keep existing member data unchanged
                 member = existing_member
-                member.name = user_data['name']
-                member.firstname = user_data['firstname']
-                member.email = user_data['email']
-                member.phone = user_data['phone']
-                member.password_member = user_data['password']
-                member.save()
-                self.stdout.write(f'Updated existing member: {member.name}')
-
-                # Clear existing resources and heroes to avoid duplicates
-                PlayerResource.objects.filter(member=member).delete()
-                PlayerHero.objects.filter(member=member).delete()
             else:
                 # Create new member
                 try:
@@ -238,7 +220,7 @@ class Command(BaseCommand):
                     self.stdout.write(f'Error creating member {user_data["name"]}: {e}')
                     continue
 
-            # Add resources to user
+            # Add resources to user (non-destructive): only create if missing
             try:
                 for resource_name, amount in user_data['resources'].items():
                     resource_type = ResourceType.objects.get(name=resource_name)
@@ -250,7 +232,7 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stdout.write(f'Error adding resources to {member.name}: {e}')
 
-            # Add heroes to user
+            # Add heroes to user (non-destructive): only create if missing
             try:
                 for hero_name in user_data['heroes']:
                     hero = Hero.objects.get(name=hero_name)
