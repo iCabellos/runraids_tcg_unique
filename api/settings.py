@@ -88,18 +88,48 @@ WSGI_APPLICATION = 'api.wsgi.app'
 # Prefer DATABASE_URL; fallback to individual parameters if needed
 import dj_database_url
 
-database_url = os.getenv('DATABASE_URL')
+# Read potential inputs
+raw_database_url = os.getenv('DATABASE_URL')
+USER = os.getenv('user')
+PASSWORD = os.getenv('password')
+HOST = os.getenv('host')
+PORT = os.getenv('port')
+DBNAME = os.getenv('dbname')
 
-if not database_url:
-    # Construct from individual env vars if provided
-    USER = os.getenv('user')
-    PASSWORD = os.getenv('password')
-    HOST = os.getenv('host')
-    PORT = os.getenv('port')
-    DBNAME = os.getenv('dbname')
-    if all([USER, PASSWORD, HOST, PORT, DBNAME]):
+# Decide effective database_url
+database_url = raw_database_url
+
+# If no DATABASE_URL, construct from individual env vars
+if not database_url and all([USER, PASSWORD, HOST, PORT, DBNAME]):
+    database_url = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
+    print("ℹ️ Constructed DATABASE_URL from individual env vars")
+
+# Defensive override: if DATABASE_URL looks like direct instance or plain 'postgres' user,
+# but pooler-style individual vars are available, prefer the pooler credentials.
+try:
+    def _looks_like_plain_instance(url: str) -> bool:
+        if not url:
+            return False
+        lowered = url.lower()
+        return ('@db.' in lowered and ':5432/' in lowered) or 'supabase.co:5432' in lowered
+
+    def _username_is_plain_postgres(url: str) -> bool:
+        try:
+            cfg = dj_database_url.parse(url)
+            return (cfg.get('USER') or '').strip() == 'postgres'
+        except Exception:
+            return False
+
+    pooler_vars_present = all([
+        (USER or '').strip(), (PASSWORD or '').strip(), (HOST or '').strip(), (PORT or '').strip(), (DBNAME or '').strip()
+    ]) and ('pooler.supabase.com' in (HOST or ''))
+
+    if database_url and pooler_vars_present and (_looks_like_plain_instance(database_url) or _username_is_plain_postgres(database_url)):
         database_url = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
-        print("ℹ️ Constructed DATABASE_URL from individual env vars")
+        print("🔁 Overriding DATABASE_URL to use Supabase Pooler based on individual vars")
+except Exception as _e:
+    # Do not fail settings due to diagnostics
+    pass
 
 if database_url:
     DATABASES = {
@@ -111,7 +141,16 @@ if database_url:
         'sslmode': 'require',
         'connect_timeout': 10,
     })
-    print(f"🗄️  Using DATABASE_URL: {database_url[:80]}...")
+    # Safe diagnostics (mask password)
+    try:
+        cfg = dj_database_url.parse(database_url)
+        effective_user = (cfg.get('USER') or '')
+        effective_host = (cfg.get('HOST') or '')
+        effective_port = (cfg.get('PORT') or '')
+        masked_user = effective_user[:6] + '...' if effective_user else ''
+        print(f"🗄️  Using DB → user={masked_user} host={effective_host} port={effective_port}")
+    except Exception:
+        print(f"🗄️  Using DATABASE_URL: {database_url[:80]}...")
 else:
     # Final fallback - empty databases for serverless
     DATABASES = {}
