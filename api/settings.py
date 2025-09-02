@@ -22,9 +22,20 @@ if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
         load_dotenv(dotenv_path=env_prod_path)
         print("📦 Loaded .env.production")
 else:
-    # Development - load .env
-    load_dotenv()
-    print("🔧 Local development - loaded .env file")
+    # Development - prefer .env; if missing, try .env.production as fallback for testing
+    env_path = BASE_DIR / '.env'
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+        print("🔧 Local development - loaded .env file")
+    else:
+        env_prod_path = BASE_DIR / '.env.production'
+        if env_prod_path.exists():
+            load_dotenv(dotenv_path=env_prod_path)
+            print("🔧 Local development - fallback loaded .env.production")
+        else:
+            # Default behavior (load_dotenv will look for .env up the tree)
+            load_dotenv()
+            print("🔧 Local development - no .env found, tried defaults")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
