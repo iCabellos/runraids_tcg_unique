@@ -26,7 +26,14 @@ try:
             # Always perform a hard reset on cold start, as requested
             print('🧨 Always resetting database on cold start...')
             try:
+                # Log tables before reset
+                try:
+                    before_tables = set(connection.introspection.table_names())
+                    print(f"🧾 Tables before reset: {len(before_tables)}")
+                except Exception as tb_e:
+                    print(f"⚠️  Could not list tables before reset: {tb_e}")
                 call_command('reset_db', '--yes')
+                print('🧨 reset_db completed.')
             except Exception as e:
                 print(f'⚠️  reset_db failed (continuing): {e}')
 
@@ -53,12 +60,21 @@ try:
                     print(f'⚠️  makemigrations issue (continuing): {_me}')
                 # Migrate essential contrib apps first to ensure auth/session tables exist
                 try:
+                    print('🔧 Migrating contrib app: contenttypes ...')
                     call_command('migrate', 'contenttypes', '--noinput')
+                    print('✅ contenttypes migrated.')
+                    print('🔧 Migrating contrib app: auth ...')
                     call_command('migrate', 'auth', '--noinput')
+                    print('✅ auth migrated.')
+                    print('🔧 Migrating contrib app: admin ...')
                     call_command('migrate', 'admin', '--noinput')
+                    print('✅ admin migrated.')
+                    print('🔧 Migrating contrib app: sessions ...')
                     call_command('migrate', 'sessions', '--noinput')
+                    print('✅ sessions migrated.')
                 except Exception as _ce:
                     print(f'⚠️  Contrib migrate issue (continuing to full migrate): {_ce}')
+                print('🔧 Running full migrate ...')
                 call_command('migrate', '--noinput')
                 print('✅ Migrations applied.')
                 print('📦 Loading initial data...')
