@@ -13,36 +13,48 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
-app = get_wsgi_application()
-
 # One-time safety net: if core auth tables are missing (fresh DB),
-# apply migrations and load initial data. This is idempotent and will not
-# overwrite existing records because our load_initial_data uses get_or_create
-# and defaults, and migrate is safe to re-run.
+# try to apply migrations and load initial data. Avoid destructive operations.
 try:
     from django.db import connection
     from django.core.management import call_command
 
     def ensure_db_ready():
         try:
-            existing_tables = set(connection.introspection.table_names())
+            # Check if auth_user table exists; if not, run migrations
+            existing_tables = set()
+            try:
+                existing_tables = set(connection.introspection.table_names())
+                print(f"🧾 Tables at startup: {len(existing_tables)}")
+            except Exception as tb_e:
+                print(f"⚠️  Could not list tables at startup: {tb_e}")
+
             if 'auth_user' not in existing_tables or 'django_migrations' not in existing_tables:
-                print('🔄 No core tables found. Running migrations...')
-                call_command('migrate', '--noinput')
-                print('✅ Migrations completed.')
-                # Load initial data only after migrations, non-destructive
-                print('📦 Loading initial data (idempotent)...')
-                call_command('load_initial_data')
-                print('✅ Initial data ensured.')
-            else:
-                # Optional: we can still ensure initial data existence without modifying existing
-                # but to avoid overhead on every cold start, we skip if tables exist.
-                pass
+                print('🔄 Applying migrations (startup)...')
+                try:
+                    call_command('migrate', '--noinput')
+                    print('✅ Migrations applied.')
+                except Exception as e:
+                    print(f'⚠️  migrate failed (continuing): {e}')
+
+            # Try to load initial data if core tables are present but data likely missing
+            try:
+                if 'core_hero' in existing_tables:
+                    print('📦 Loading initial data (startup)...')
+                    call_command('load_initial_data')
+                    print('✅ Initial data loaded.')
+            except Exception as e:
+                print(f'⚠️  Initial data load skipped/failed: {e}')
         except Exception as e:
             # Never break app startup because of setup. Log and continue.
             print(f'⚠️  Startup DB ensure skipped due to error: {e}')
 
+    print('🟢 Starting ensure_db_ready (cold start) ...')
     ensure_db_ready()
+    print('🟢 Finished ensure_db_ready.')
 except Exception as _e:
     # If any import fails (e.g., during collectstatic or build), do nothing
     pass
+
+# Now create the WSGI application after DB is ready
+app = get_wsgi_application()

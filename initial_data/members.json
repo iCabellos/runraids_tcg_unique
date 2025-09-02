@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Cabellos",
+    "firstname": "Ivan",
+    "email": "ivan@example.com",
+    "phone": 600000001,
+    "password": "test1234",
+    "resources": {"Oro": 1000, "Madera": 500, "Elixir": 200},
+    "heroes": ["Novato"]
+  },
+  {
+    "name": "Doe",
+    "firstname": "John",
+    "email": "john@example.com",
+    "phone": 600000002,
+    "password": "test1234",
+    "resources": {"Oro": 800, "Madera": 400},
+    "heroes": []
+  }
+]

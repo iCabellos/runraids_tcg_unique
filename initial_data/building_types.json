@@ -1,0 +1,11 @@
+[
+  {"type": "hq", "name": "Edificio principal", "image": null},
+  {"type": "xp_tower_heroes", "name": "Edificio de gestión para héroes", "image": null},
+  {"type": "xp_farming", "name": "Edificio almacenador de experiéncia", "image": null},
+  {"type": "market", "name": "Mercado", "image": null},
+  {"type": "alliance", "name": "Centro de la alianza", "image": null},
+  {"type": "camp", "name": "Campamento principal", "image": null},
+  {"type": "cf", "name": "Hoguera", "image": null},
+  {"type": "store", "name": "Alijo principal", "image": null},
+  {"type": "wc_portal", "name": "Baño invocador", "image": null}
+]

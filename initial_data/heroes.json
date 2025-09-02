@@ -1,0 +1,25 @@
+[
+  {
+    "name": "Novato",
+    "codename": "novato",
+    "description": "Héroe básico de prueba.",
+    "image": null,
+    "race": "elf",
+    "klass": "mage",
+    "rarity": "common",
+    "primary_mechanic": "combat",
+    "damage_profile": "magical",
+    "subrole": "dps",
+    "base_hp": 55,
+    "base_atk_mag": 90,
+    "base_atk_phy": 10,
+    "base_def_mag": 50,
+    "base_def_phy": 5,
+    "base_speed": 10,
+    "base_crit_chance": 0.05,
+    "base_crit_damage": 1.5,
+    "rage_max": 100,
+    "starting_rage": 0,
+    "abilities": ["Descarga Arcana", "Tormenta de Maná", "Foco Arcano", "Fractura Etérea"]
+  }
+]

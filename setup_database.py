@@ -58,7 +58,40 @@ def run_migrations():
     """Apply database migrations."""
     print("🔄 Applying migrations...")
     try:
-        execute_from_command_line(['manage.py', 'migrate'])
+        # Handle placeholder 0001_initial.py if present
+        from pathlib import Path as _Path
+        import os as _os
+        mig_path = _Path(__file__).resolve().parent / 'core' / 'migrations' / '0001_initial.py'
+        if mig_path.exists():
+            try:
+                content = mig_path.read_text(encoding='utf-8').strip()
+                if content.startswith('# intentionally empty'):
+                    print('🧹 Removing placeholder migration core/migrations/0001_initial.py...')
+                    try:
+                        _os.remove(mig_path)
+                    except Exception as _re:
+                        print(f'⚠️  Could not remove placeholder migration: {_re}')
+            except Exception as _pe:
+                print(f'⚠️  Could not inspect placeholder migration: {_pe}')
+        # Clean up any conflicting core migrations to regenerate from scratch
+        from glob import glob as _glob
+        mig_dir = _Path(__file__).resolve().parent / 'core' / 'migrations'
+        try:
+            to_remove = [p for p in _glob(str(mig_dir / '*.py')) if not p.endswith('__init__.py')]
+            if to_remove:
+                print(f'🧹 Removing existing core migration files: {len(to_remove)}')
+                for p in to_remove:
+                    try:
+                        _os.remove(p)
+                    except Exception as _re2:
+                        print(f'⚠️  Could not remove {p}: {_re2}')
+        except Exception as _ce:
+            print(f'⚠️  Could not clean migration dir: {_ce}')
+        # Ensure migrations are generated
+        print('🛠️  Generating migrations for core...')
+        execute_from_command_line(['manage.py', 'makemigrations', 'core', '--noinput'])
+        # Apply migrations
+        execute_from_command_line(['manage.py', 'migrate', '--noinput'])
         print("✅ Migrations applied successfully")
         return True
     except Exception as e:

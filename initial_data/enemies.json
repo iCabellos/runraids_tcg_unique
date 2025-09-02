@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Oveja",
+    "image": null,
+    "description": "Una oveja mansa de nivel 1.",
+    "level": 1,
+    "base_hp": 5,
+    "attack": 1,
+    "defense": 0,
+    "speed": 5,
+    "skills": ["Descarga Arcana"]
+  }
+]

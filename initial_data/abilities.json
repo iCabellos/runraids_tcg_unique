@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Descarga Arcana",
+    "description": "Daño mágico básico.",
+    "effect_type": "damage",
+    "target": "enemy_single",
+    "damage_profile": "magical",
+    "scaling_stat": "atk_mag",
+    "base_value": 50.0,
+    "percent_value": 0.0,
+    "passive_trigger": "always",
+    "rage_gain": 10,
+    "rage_cost": 0,
+    "per_level_multiplier": 0.2,
+    "max_level": 5
+  },
+  {
+    "name": "Escudo Etéreo",
+    "description": "Aumenta defensa mágica.",
+    "effect_type": "buff",
+    "target": "self",
+    "damage_profile": "magical",
+    "scaling_stat": "none",
+    "base_value": 0.0,
+    "percent_value": 0.15,
+    "passive_trigger": "always",
+    "rage_gain": 0,
+    "rage_cost": 0,
+    "per_level_multiplier": 0.2,
+    "max_level": 5
+  },
+  {
+    "name": "Luz de Umbral",
+    "description": "Curación dirigida.",
+    "effect_type": "heal",
+    "target": "ally_single",
+    "damage_profile": "magical",
+    "scaling_stat": "atk_mag",
+    "base_value": 25.0,
+    "percent_value": 0.0,
+    "passive_trigger": "always",
+    "rage_gain": 5,
+    "rage_cost": 0,
+    "per_level_multiplier": 0.2,
+    "max_level": 5
+  }
+]

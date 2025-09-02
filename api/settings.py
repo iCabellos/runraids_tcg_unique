@@ -22,9 +22,20 @@ if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
         load_dotenv(dotenv_path=env_prod_path)
         print("📦 Loaded .env.production")
 else:
-    # Development - load .env
-    load_dotenv()
-    print("🔧 Local development - loaded .env file")
+    # Development - prefer .env; if missing, try .env.production as fallback for testing
+    env_path = BASE_DIR / '.env'
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+        print("🔧 Local development - loaded .env file")
+    else:
+        env_prod_path = BASE_DIR / '.env.production'
+        if env_prod_path.exists():
+            load_dotenv(dotenv_path=env_prod_path)
+            print("🔧 Local development - fallback loaded .env.production")
+        else:
+            # Default behavior (load_dotenv will look for .env up the tree)
+            load_dotenv()
+            print("🔧 Local development - no .env found, tried defaults")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -88,18 +99,64 @@ WSGI_APPLICATION = 'api.wsgi.app'
 # Prefer DATABASE_URL; fallback to individual parameters if needed
 import dj_database_url
 
-database_url = os.getenv('DATABASE_URL')
+# Read potential inputs (support both lowercase and DB_* variants)
+raw_database_url = os.getenv('DATABASE_URL')
+USER = os.getenv('user') or os.getenv('DB_USER')
+PASSWORD = os.getenv('password') or os.getenv('DB_PASSWORD')
+HOST = os.getenv('host') or os.getenv('DB_HOST')
+PORT = os.getenv('port') or os.getenv('DB_PORT')
+DBNAME = os.getenv('dbname') or os.getenv('DB_NAME')
+FORCE_POOLER = (os.getenv('FORCE_POOLER', '0').lower() in {'1', 'true', 'yes'})
 
-if not database_url:
-    # Construct from individual env vars if provided
-    USER = os.getenv('user')
-    PASSWORD = os.getenv('password')
-    HOST = os.getenv('host')
-    PORT = os.getenv('port')
-    DBNAME = os.getenv('dbname')
-    if all([USER, PASSWORD, HOST, PORT, DBNAME]):
+# Decide effective database_url
+database_url = None if FORCE_POOLER else raw_database_url
+
+# If no DATABASE_URL (or FORCE_POOLER), construct from individual env vars
+if all([(USER or '').strip(), (PASSWORD or '').strip(), (HOST or '').strip(), (PORT or '').strip(), (DBNAME or '').strip()]):
+    if not database_url:
         database_url = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
-        print("ℹ️ Constructed DATABASE_URL from individual env vars")
+        reason = "FORCE_POOLER" if FORCE_POOLER else "individual env vars"
+        print(f"ℹ️ Constructed DATABASE_URL from {reason}")
+
+# Defensive override logic: ensure pooler credentials are used
+try:
+    def _looks_like_plain_instance(url: str) -> bool:
+        if not url:
+            return False
+        lowered = url.lower()
+        # Any direct instance or default supabase port 5432
+        return ('@db.' in lowered and ':5432/' in lowered) or 'supabase.co:5432' in lowered
+
+    def _username_is_plain_postgres(url: str) -> bool:
+        try:
+            cfg = dj_database_url.parse(url)
+            return (cfg.get('USER') or '').strip() == 'postgres'
+        except Exception:
+            return False
+
+    def _host_is_pooler(url: str) -> bool:
+        try:
+            cfg = dj_database_url.parse(url)
+            return 'pooler.supabase.com' in (cfg.get('HOST') or '')
+        except Exception:
+            return False
+
+    pooler_vars_present = all([
+        (USER or '').strip(), (PASSWORD or '').strip(), (HOST or '').strip(), (PORT or '').strip(), (DBNAME or '').strip()
+    ]) and ('pooler.supabase.com' in (HOST or ''))
+
+    if database_url and pooler_vars_present:
+        # Override if URL looks like direct instance or username is plain 'postgres'
+        if _looks_like_plain_instance(database_url) or _username_is_plain_postgres(database_url):
+            database_url = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
+            print("🔁 Overriding DATABASE_URL → using Supabase Pooler based on individual vars (reason: plain instance or username 'postgres')")
+        # Also override if URL host is pooler but username is still 'postgres'
+        elif _host_is_pooler(database_url) and _username_is_plain_postgres(database_url):
+            database_url = f"postgresql://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
+            print("🔁 Overriding DATABASE_URL → pooler detected but username was 'postgres'")
+except Exception as _e:
+    # Do not fail settings due to diagnostics
+    pass
 
 if database_url:
     DATABASES = {
@@ -111,7 +168,16 @@ if database_url:
         'sslmode': 'require',
         'connect_timeout': 10,
     })
-    print(f"🗄️  Using DATABASE_URL: {database_url[:80]}...")
+    # Safe diagnostics (mask password)
+    try:
+        cfg = dj_database_url.parse(database_url)
+        effective_user = (cfg.get('USER') or '')
+        effective_host = (cfg.get('HOST') or '')
+        effective_port = (cfg.get('PORT') or '')
+        masked_user = (effective_user[:6] + '...') if effective_user else ''
+        print(f"🗄️  Using DB → user={masked_user} host={effective_host} port={effective_port}")
+    except Exception:
+        print(f"🗄️  Using DATABASE_URL: {database_url[:80]}...")
 else:
     # Final fallback - empty databases for serverless
     DATABASES = {}

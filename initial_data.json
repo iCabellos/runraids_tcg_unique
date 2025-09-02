@@ -1,235 +1,287 @@
-{
-  "resource_types": [
-    {"name": "Oro", "description": "Moneda principal del juego"},
-    {"name": "Madera", "description": "Material de construcción básico"},
-    {"name": "Piedra", "description": "Material de construcción resistente"},
-    {"name": "Hierro", "description": "Material para armas y herramientas"},
-    {"name": "Comida", "description": "Necesaria para mantener a los héroes"}
-  ],
-  "building_types": [
-    {"type": "CAMP", "name": "Campamento"},
-    {"type": "BARRACKS", "name": "Cuarteles"},
-    {"type": "FARM", "name": "Granja"},
-    {"type": "MINE", "name": "Mina"},
-    {"type": "SAWMILL", "name": "Aserradero"},
-    {"type": "QUARRY", "name": "Cantera"}
-  ],
-  "rarities": [
-    {"type": "COMMON"},
-    {"type": "UNCOMMON"},
-    {"type": "RARE"},
-    {"type": "EPIC"},
-    {"type": "LEGENDARY"}
-  ],
-  "abilities": [
-    {
-      "name": "Golpe Básico",
-      "type": "ATTACK",
-      "power": 50,
-      "description": "Un ataque básico con arma"
-    },
-    {
-      "name": "Curación Menor",
-      "type": "HEAL",
-      "power": 30,
-      "description": "Restaura una pequeña cantidad de vida"
-    },
-    {
-      "name": "Escudo Mágico",
-      "type": "DEFENSE",
-      "power": 25,
-      "description": "Aumenta la defensa temporalmente"
-    },
-    {
-      "name": "Golpe Crítico",
-      "type": "ATTACK",
-      "power": 80,
-      "description": "Un ataque poderoso con posibilidad de crítico"
-    },
-    {
-      "name": "Curación Mayor",
-      "type": "HEAL",
-      "power": 60,
-      "description": "Restaura una gran cantidad de vida"
-    }
-  ],
-  "heroes": [
-    {
-      "name": "Guerrero Novato",
-      "rarity": "COMMON",
-      "description": "Un guerrero joven con potencial",
-      "base_hp": 100,
-      "base_attack": 50,
-      "base_defense": 30,
-      "base_speed": 25,
-      "abilities": ["Golpe Básico", "Escudo Mágico"]
-    },
-    {
-      "name": "Mago Aprendiz",
-      "rarity": "COMMON",
-      "description": "Un mago que está aprendiendo las artes arcanas",
-      "base_hp": 80,
-      "base_attack": 40,
-      "base_defense": 20,
-      "base_speed": 30,
-      "abilities": ["Curación Menor", "Golpe Básico"]
-    },
-    {
-      "name": "Arquero Élite",
-      "rarity": "UNCOMMON",
-      "description": "Un arquero experimentado con puntería letal",
-      "base_hp": 90,
-      "base_attack": 65,
-      "base_defense": 25,
-      "base_speed": 40,
-      "abilities": ["Golpe Crítico", "Escudo Mágico"]
-    },
-    {
-      "name": "Paladín Sagrado",
-      "rarity": "RARE",
-      "description": "Un guerrero bendecido con poderes divinos",
-      "base_hp": 150,
-      "base_attack": 60,
-      "base_defense": 50,
-      "base_speed": 20,
-      "abilities": ["Curación Mayor", "Golpe Crítico", "Escudo Mágico"]
-    },
-    {
-      "name": "Dragón Ancestral",
-      "rarity": "LEGENDARY",
-      "description": "Una criatura legendaria de inmenso poder",
-      "base_hp": 300,
-      "base_attack": 120,
-      "base_defense": 80,
-      "base_speed": 35,
-      "abilities": ["Golpe Crítico", "Curación Mayor", "Escudo Mágico"]
-    }
-  ],
-  "enemies": [
-    {
-      "name": "Goblin Salvaje",
-      "base_hp": 50,
-      "attack": 25,
-      "defense": 10,
-      "speed": 30,
-      "description": "Un goblin agresivo del bosque"
-    },
-    {
-      "name": "Orc Guerrero",
-      "base_hp": 120,
-      "attack": 45,
-      "defense": 25,
-      "speed": 20,
-      "description": "Un orc fuerte y brutal"
-    },
-    {
-      "name": "Troll de las Montañas",
-      "base_hp": 200,
-      "attack": 60,
-      "defense": 40,
-      "speed": 15,
-      "description": "Un troll gigante de las montañas"
-    }
-  ],
-  "django_admin_users": [
-    {
-      "username": "admin",
-      "email": "admin@runraids.com",
+[
+  // ==== ADMIN DJANGO (auth.user) ====
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
       "password": "admin",
+      "last_login": null,
       "is_superuser": true,
-      "is_staff": true,
+      "username": "admin",
       "first_name": "Admin",
-      "last_name": "User"
+      "last_name": "Site",
+      "email": "ivancabe.96@gmail.com",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2025-09-01T00:00:00Z",
+      "groups": [],
+      "user_permissions": []
     }
-  ],
-  "test_users": [
-    {
-      "name": "TestMember",
-      "firstname": "Usuario",
-      "email": "test@runraids.com",
-      "phone": 555000001,
-      "password": "test123",
-      "resources": {
-        "Oro": 500,
-        "Madera": 250,
-        "Piedra": 150,
-        "Hierro": 100,
-        "Comida": 400
-      },
-      "heroes": ["Guerrero Novato"]
-    },
-    {
-      "name": "TestPlayer1",
-      "firstname": "Jugador",
-      "email": "test1@runraids.com",
-      "phone": 123456789,
-      "password": "testpass123",
-      "resources": {
-        "Oro": 1000,
-        "Madera": 500,
-        "Piedra": 300,
-        "Hierro": 200,
-        "Comida": 800
-      },
-      "heroes": ["Guerrero Novato", "Mago Aprendiz"]
-    },
-    {
-      "name": "TestPlayer2",
-      "firstname": "Jugador",
-      "email": "test2@runraids.com",
-      "phone": 987654321,
-      "password": "testpass123",
-      "resources": {
-        "Oro": 1500,
-        "Madera": 700,
-        "Piedra": 400,
-        "Hierro": 350,
-        "Comida": 1200
-      },
-      "heroes": ["Arquero Élite", "Paladín Sagrado"]
-    },
-    {
-      "name": "AdminPlayer",
-      "firstname": "Administrador",
-      "email": "admin@runraids.com",
-      "phone": 111111111,
-      "password": "adminpass123",
-      "resources": {
-        "Oro": 10000,
-        "Madera": 5000,
-        "Piedra": 3000,
-        "Hierro": 2000,
-        "Comida": 8000
-      },
-      "heroes": ["Dragón Ancestral", "Paladín Sagrado", "Arquero Élite"]
+  },
+
+  // ==== MEMBERS (login por teléfono + contraseña en claro; tu save() la hashea) ====
+  {
+    "model": "core.member",
+    "pk": 101,
+    "fields": {
+      "name": "Cabellos",
+      "firstname": "Ivan",
+      "password_member": "test1234",
+      "email": "ivan@example.com",
+      "phone": 600000001,
+      "created_at": "2025-09-01T00:00:00Z"
     }
-  ],
-  "building_costs": [
-    {
-      "building_type": "BARRACKS",
-      "level": 2,
-      "costs": [
-        {"resource": "Oro", "amount": 100},
-        {"resource": "Madera", "amount": 50},
-        {"resource": "Piedra", "amount": 25}
-      ]
-    },
-    {
-      "building_type": "FARM",
-      "level": 2,
-      "costs": [
-        {"resource": "Oro", "amount": 80},
-        {"resource": "Madera", "amount": 60}
-      ]
-    },
-    {
-      "building_type": "MINE",
-      "level": 2,
-      "costs": [
-        {"resource": "Oro", "amount": 120},
-        {"resource": "Madera", "amount": 40},
-        {"resource": "Piedra", "amount": 30}
-      ]
+  },
+  {
+    "model": "core.member",
+    "pk": 102,
+    "fields": {
+      "name": "Doe",
+      "firstname": "John",
+      "password_member": "test1234",
+      "email": "john@example.com",
+      "phone": 600000002,
+      "created_at": "2025-09-01T00:00:00Z"
     }
-  ]
-}
+  },
+  {
+    "model": "core.member",
+    "pk": 103,
+    "fields": {
+      "name": "Smith",
+      "firstname": "Jane",
+      "password_member": "test1234",
+      "email": "jane@example.com",
+      "phone": 600000003,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // ==== RESOURCE TYPES ====
+  { "model": "core.resourcetype", "pk": 1, "fields": { "name": "Oro", "description": "Moneda y mejoras" } },
+  { "model": "core.resourcetype", "pk": 2, "fields": { "name": "Madera", "description": "Construcción básica" } },
+  { "model": "core.resourcetype", "pk": 3, "fields": { "name": "Elixir", "description": "Energía mágica y mejoras" } },
+
+  // ==== BUILDING TYPES ====
+  { "model": "core.buildingtype", "pk": 11, "fields": { "name": "Edificio principal", "type": "hq", "image": null } },
+  { "model": "core.buildingtype", "pk": 12, "fields": { "name": "Edificio de gestión para héroes", "type": "xp_tower_heroes", "image": null } },
+  { "model": "core.buildingtype", "pk": 13, "fields": { "name": "Edificio almacenador de experiéncia", "type": "xp_farming", "image": null } },
+  { "model": "core.buildingtype", "pk": 14, "fields": { "name": "Mercado", "type": "market", "image": null } },
+  { "model": "core.buildingtype", "pk": 15, "fields": { "name": "Centro de la alianza", "type": "alliance", "image": null } },
+  { "model": "core.buildingtype", "pk": 16, "fields": { "name": "Campamento principal", "type": "camp", "image": null } },
+  { "model": "core.buildingtype", "pk": 17, "fields": { "name": "Hoguera", "type": "cf", "image": null } },
+  { "model": "core.buildingtype", "pk": 18, "fields": { "name": "Alijo principal", "type": "store", "image": null } },
+  { "model": "core.buildingtype", "pk": 19, "fields": { "name": "Baño invocador", "type": "wc_portal", "image": null } },
+
+  // ==== RARITIES ====
+  { "model": "core.rarity", "pk": 1, "fields": { "type": "common" } },
+  { "model": "core.rarity", "pk": 2, "fields": { "type": "rare" } },
+  { "model": "core.rarity", "pk": 3, "fields": { "type": "epic" } },
+  { "model": "core.rarity", "pk": 4, "fields": { "type": "legendary" } },
+
+  // ==== SKILLS (una de cada tipo + combinada) ====
+  // Básico: daño mágico single + gana ira
+  {
+    "model": "core.skill",
+    "pk": 201,
+    "fields": {
+      "name": "Golpe Arcano",
+      "description": "Proyectil mágico. +20 de ira.",
+      "effect_type": "damage",
+      "target": "enemy_single",
+      "damage_profile": "magical",
+      "scaling_stat": "atk_mag",
+      "base_value": 30.0,
+      "percent_value": 0.0,
+      "passive_trigger": "always",
+      "rage_gain": 20,
+      "rage_cost": 0,
+      "per_level_multiplier": 0.2,
+      "max_level": 5,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // Ultimate: daño en área mágico + consume ira
+  {
+    "model": "core.skill",
+    "pk": 202,
+    "fields": {
+      "name": "Tormenta de Maná",
+      "description": "Daño mágico en área. Consume 60 de ira.",
+      "effect_type": "damage",
+      "target": "enemy_team",
+      "damage_profile": "magical",
+      "scaling_stat": "atk_mag",
+      "base_value": 120.0,
+      "percent_value": 0.0,
+      "passive_trigger": "always",
+      "rage_gain": 0,
+      "rage_cost": 60,
+      "per_level_multiplier": 0.2,
+      "max_level": 5,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // Buff: +10% ataque mágico al propio héroe
+  {
+    "model": "core.skill",
+    "pk": 203,
+    "fields": {
+      "name": "Foco Arcano",
+      "description": "Incrementa el ATK mágico.",
+      "effect_type": "buff",
+      "target": "self",
+      "damage_profile": "magical",
+      "scaling_stat": "none",
+      "base_value": 0.0,
+      "percent_value": 0.10,
+      "passive_trigger": "always",
+      "rage_gain": 0,
+      "rage_cost": 0,
+      "per_level_multiplier": 0.2,
+      "max_level": 5,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // Debuff: -20% defensa del enemigo objetivo (pensado para sinergia tras ulti)
+  {
+    "model": "core.skill",
+    "pk": 204,
+    "fields": {
+      "name": "Fractura Etérea",
+      "description": "Reduce DEF mágica del objetivo.",
+      "effect_type": "debuff",
+      "target": "enemy_single",
+      "damage_profile": "magical",
+      "scaling_stat": "none",
+      "base_value": 0.0,
+      "percent_value": -0.20,
+      "passive_trigger": "on_hit",
+      "rage_gain": 0,
+      "rage_cost": 0,
+      "per_level_multiplier": 0.2,
+      "max_level": 5,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // Heal: cura en base a ATK mágico al aliado objetivo
+  {
+    "model": "core.skill",
+    "pk": 205,
+    "fields": {
+      "name": "Luz de Umbral",
+      "description": "Curación dirigida que escala con ATK mágico.",
+      "effect_type": "heal",
+      "target": "ally_single",
+      "damage_profile": "magical",
+      "scaling_stat": "atk_mag",
+      "base_value": 25.0,
+      "percent_value": 0.0,
+      "passive_trigger": "always",
+      "rage_gain": 10,
+      "rage_cost": 0,
+      "per_level_multiplier": 0.2,
+      "max_level": 5,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // Skill “combinada”: daño + buff propio (+10% ATK físico por 1 turno) — lo resuelve tu servicio de combate
+  {
+    "model": "core.skill",
+    "pk": 206,
+    "fields": {
+      "name": "Golpe Infundido",
+      "description": "Hace daño y otorga un buff propio (+10% ATK físico). El servicio de combate aplica ambos efectos.",
+      "effect_type": "damage",
+      "target": "enemy_single",
+      "damage_profile": "physical",
+      "scaling_stat": "atk_phy",
+      "base_value": 35.0,
+      "percent_value": 0.10,
+      "passive_trigger": "always",
+      "rage_gain": 15,
+      "rage_cost": 0,
+      "per_level_multiplier": 0.2,
+      "max_level": 5,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // ==== HERO BÁSICO: 'novato' (Elfo Mago común) ====
+  {
+    "model": "core.hero",
+    "pk": 301,
+    "fields": {
+      "codename": "novato",
+      "name": "Novato",
+      "description": "Héroe básico de prueba.",
+      "image": null,
+      "race": "elf",
+      "klass": "mage",
+      "rarity": 1,
+      "primary_mechanic": "combat",
+      "damage_profile": "magical",
+      "subrole": "dps",
+      "base_hp": 55,
+      "base_atk_mag": 90,
+      "base_atk_phy": 10,
+      "base_def_mag": 50,
+      "base_def_phy": 5,
+      "base_speed": 10,
+      "base_crit_chance": 0.05,
+      "base_crit_damage": 1.5,
+      "rage_max": 100,
+      "starting_rage": 0,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+
+  // Asignación de slots al héroe básico
+  { "model": "core.heroskill", "pk": 401, "fields": { "hero": 301, "skill": 201, "slot": "basic",     "rage_gain_override": null, "rage_cost_override": null } },
+  { "model": "core.heroskill", "pk": 402, "fields": { "hero": 301, "skill": 202, "slot": "ultimate",  "rage_gain_override": null, "rage_cost_override": null } },
+  { "model": "core.heroskill", "pk": 403, "fields": { "hero": 301, "skill": 203, "slot": "passive_1", "rage_gain_override": null, "rage_cost_override": null } },
+  { "model": "core.heroskill", "pk": 404, "fields": { "hero": 301, "skill": 204, "slot": "passive_2", "rage_gain_override": null, "rage_cost_override": null } },
+
+  // ==== ENEMIGO BÁSICO: Oveja ====
+  {
+    "model": "core.skill",
+    "pk": 207,
+    "fields": {
+      "name": "Beee",
+      "description": "Balido que apenas hace cosquillas.",
+      "effect_type": "damage",
+      "target": "enemy_single",
+      "damage_profile": "physical",
+      "scaling_stat": "atk_phy",
+      "base_value": 1.0,
+      "percent_value": 0.0,
+      "passive_trigger": "always",
+      "rage_gain": 5,
+      "rage_cost": 0,
+      "per_level_multiplier": 0.2,
+      "max_level": 5,
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "core.enemy",
+    "pk": 501,
+    "fields": {
+      "name": "Oveja",
+      "image": null,
+      "description": "Una oveja mansa de nivel 1.",
+      "level": 1,
+      "base_hp": 5,
+      "attack": 1,
+      "defense": 0,
+      "speed": 5,
+      "skills": [207],
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  }
+]
