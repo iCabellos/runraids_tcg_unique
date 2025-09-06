@@ -144,11 +144,19 @@
 
         <div class="d-flex justify-content-around align-items-center mb-4">
             <div>
-                <img src="{{ hero.hero.image.url }}" alt="Hero Image" class="character-img float" id="hero-img">
+                {% if hero.hero.get_image_url %}
+                  <img src="{{ hero.hero.get_image_url }}" alt="Hero Image" class="character-img float" id="hero-img">
+                {% else %}
+                  <div class="character-img float" id="hero-img" style="background: #333; display: flex; align-items: center; justify-content: center; color: white;">No Image</div>
+                {% endif %}
                 <div class="mt-2" id="hero-hp">❤️ {{ hero_hp }} HP</div>
             </div>
             <div>
-                <img src="{{ enemy.image.url }}" alt="Enemy Image" class="enemy-img shake" id="enemy-img">
+                {% if enemy.get_image_url %}
+                  <img src="{{ enemy.get_image_url }}" alt="Enemy Image" class="enemy-img shake" id="enemy-img">
+                {% else %}
+                  <div class="enemy-img shake" id="enemy-img" style="background: #333; display: flex; align-items: center; justify-content: center; color: white;">No Image</div>
+                {% endif %}
                 <div class="mt-2" id="enemy-hp">💀 {{ enemy_hp }} HP</div>
             </div>
         </div>

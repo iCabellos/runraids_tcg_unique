@@ -113,7 +113,7 @@ class CityView(TemplateView):
                     "type": building.building_type.type,
                     "name": building.building_type.name,
                     "level": building.level,
-                    "image": building.building_type.image.url if building.building_type.image else None,
+                    "image": building.building_type.get_image_url(),
                 })
 
             context["buildings"] = buildings_info
@@ -156,7 +156,7 @@ class CampView(MemberRequiredMixin, TemplateView):
             resources_info.append({
                 "id": rt.id,
                 "name": rt.name,
-                "image": rt.image.url if rt.image else None,
+                "image": rt.get_image_url(),
                 "amount": player_res.get(rt.id, 0),
             })
 
@@ -182,10 +182,19 @@ class CampView(MemberRequiredMixin, TemplateView):
                 "type": building.building_type.type,
                 "name": building.building_type.name,
                 "level": building.level,
-                "image": building.building_type.image.url if building.building_type.image else None,
+                "image": building.building_type.get_image_url(),
                 "can_upgrade": can_upgrade,
                 "is_max_level": is_max_level,
-                "upgrade_costs": list(costs),
+                "upgrade_costs": [
+                    {
+                        "resource_type": {
+                            "name": cost.resource_type.name,
+                            "image_url": cost.resource_type.get_image_url(),
+                        },
+                        "amount": cost.amount,
+                    }
+                    for cost in costs
+                ],
             })
 
         context.update({
@@ -336,7 +345,7 @@ class RaidRoomPage(TemplateView):
                 "hp": ph.current_hp,
                 "max_hp": ph.s_hp(),
                 "base_hero_id": ph.hero_id,
-                "image": (ph.hero.image.url if getattr(ph.hero, 'image', None) else None),
+                "image": ph.hero.get_image_url(),
             }
             for ph in heroes_member
         ]
@@ -379,7 +388,7 @@ class RaidRoomPage(TemplateView):
                     "name": e.hero.name,
                     "codename": e.hero.codename,
                     "rarity": e.hero.rarity.type if e.hero.rarity else "common",
-                    "image": e.hero.image.url if e.hero.image else None,
+                    "image": e.hero.get_image_url(),
                     "is_promotional": e.is_promotional,
                 }
                 (promo_entries if e.is_promotional else normal_entries).append(item)
@@ -393,10 +402,10 @@ class RaidRoomPage(TemplateView):
                 "id": b.id,
                 "name": b.name,
                 "description": b.description,
-                "image": b.image.url if b.image else None,
+                "image": getattr(b, 'image', None) and b.image.url,  # Banner images are actual uploads
                 "cost": {
                     "resource_name": b.cost_resource.name,
-                    "resource_image": b.cost_resource.image.url if b.cost_resource.image else None,
+                    "resource_image": b.cost_resource.get_image_url(),
                     "amount": b.cost_amount,
                     "balance": balance,
                     "can_afford": can_afford,
@@ -637,7 +646,7 @@ def _serialize_room(room):
                 team_heroes.append({
                     "id": ph.id,
                     "name": ph.hero.name,
-                    "image": ph.hero.image.url if ph.hero.image else None,
+                    "image": ph.hero.get_image_url(),
                     "current_hp": ph.current_hp,
                     "max_hp": ph.s_hp(),
                     "is_alive": ph.current_hp > 0,
@@ -685,7 +694,7 @@ def _serialize_room(room):
             {
                 "id": e.id,
                 "name": e.enemy.name,
-                "image": e.enemy.image.url if e.enemy.image else None,
+                "image": e.enemy.get_image_url(),
                 "hp": e.current_hp,
                 "max_hp": e.max_hp,
                 "alive": e.is_alive,
@@ -853,7 +862,7 @@ def api_team_get(request):
             "hp": ph.current_hp,
             "max_hp": ph.s_hp(),
             "base_hero_id": ph.hero_id,
-            "image": (ph.hero.image.url if getattr(ph.hero, 'image', None) else None),
+            "image": ph.hero.get_image_url(),
         }
 
     heroes_qs = PlayerHero.objects.filter(member=member).select_related('hero').order_by('id')
@@ -941,7 +950,7 @@ def api_raids_available(request):
             "difficulty_display": raid.get_difficulty_display(),
             "min_players": raid.min_players,
             "max_players": raid.max_players,
-            "image": raid.image.url if raid.image else None,
+            "image": getattr(raid, 'image', None) and raid.image.url,  # Raid images are actual uploads
         })
     return JsonResponse({"ok": True, "raids": raids_data})
 

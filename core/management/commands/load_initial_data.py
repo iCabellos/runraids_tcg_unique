@@ -146,9 +146,19 @@ class Command(BaseCommand):
         self.stdout.write('Loading resource types...')
         for resource_data in data.get('resource_types', []):
             resource_data.pop('pk', None)
+
+            # Process image path for static files
+            defaults = {'description': resource_data.get('description', '')}
+            if 'image' in resource_data and resource_data['image']:
+                # Si es una ruta estática (empieza con img/), usar static_image_path
+                if str(resource_data['image']).startswith('img/'):
+                    defaults['static_image_path'] = resource_data['image']
+                else:
+                    defaults['image'] = resource_data['image']
+
             resource_type, created = ResourceType.objects.get_or_create(
                 name=resource_data['name'],
-                defaults={'description': resource_data.get('description', '')}
+                defaults=defaults
             )
             if created:
                 self.stdout.write(f'Created resource type: {resource_type.name}')
@@ -160,13 +170,12 @@ class Command(BaseCommand):
             building_data.pop('pk', None)
             defaults = {'name': building_data['name']}
             # Support static image filenames from JSON (e.g., img/campamento_principal.png)
-            image_path = building_data.get('image')
-            if image_path:
-                # If a relative path under static is provided, prefix with STATIC_URL
-                if not (str(image_path).startswith('http') or str(image_path).startswith('/')):
-                    defaults['image'] = settings.STATIC_URL.rstrip('/') + '/' + image_path.lstrip('/')
+            if 'image' in building_data and building_data['image']:
+                # Si es una ruta estática (empieza con img/), usar static_image_path
+                if str(building_data['image']).startswith('img/'):
+                    defaults['static_image_path'] = building_data['image']
                 else:
-                    defaults['image'] = image_path
+                    defaults['image'] = building_data['image']
             building_type, created = BuildingType.objects.get_or_create(
                 type=building_data['type'],
                 defaults=defaults
@@ -220,7 +229,11 @@ class Command(BaseCommand):
                           'base_hp', 'base_atk_mag', 'base_atk_phy', 'base_def_mag', 'base_def_phy', 'base_speed',
                           'base_crit_chance']:
                     if k in hero_data:
-                        extra[k] = hero_data[k]
+                        if k == 'image' and hero_data[k] and str(hero_data[k]).startswith('img/'):
+                            # Si es una ruta estática, usar static_image_path
+                            extra['static_image_path'] = hero_data[k]
+                        else:
+                            extra[k] = hero_data[k]
                 # Backward fallback
                 if 'base_attack' in hero_data and 'base_atk_mag' not in extra and 'base_atk_phy' not in extra:
                     extra['base_atk_mag'] = hero_data['base_attack']
@@ -233,10 +246,6 @@ class Command(BaseCommand):
                     **extra
                 )
                 # Add abilities to hero
-                # Prefix hero image if provided as relative
-                if 'image' in hero_data and hero.image and not str(hero.image).startswith('/') and not str(hero.image).startswith('http'):
-                    hero.image = settings.STATIC_URL.rstrip('/') + '/' + str(hero.image).lstrip('/')
-                    hero.save(update_fields=['image'])
                 # Attach up to 4 skills to the hero in fixed slots (BASIC, ULTIMATE, PASSIVE_1, PASSIVE_2)
                 slots_order = [SkillSlot.BASIC, SkillSlot.ULTIMATE, SkillSlot.PASSIVE_1, SkillSlot.PASSIVE_2]
                 for idx, skill_name in enumerate(hero_data.get('abilities', [])):
@@ -253,15 +262,26 @@ class Command(BaseCommand):
         self.stdout.write('Loading enemies...')
         for enemy_data in data.get('enemies', []):
             enemy_data.pop('pk', None)
+
+            # Process image path for static files
+            defaults = {
+                'base_hp': enemy_data['base_hp'],
+                'attack': enemy_data['attack'],
+                'defense': enemy_data['defense'],
+                'speed': enemy_data['speed'],
+                'description': enemy_data.get('description', '')
+            }
+
+            if 'image' in enemy_data and enemy_data['image']:
+                # Si es una ruta estática (empieza con img/), usar static_image_path
+                if str(enemy_data['image']).startswith('img/'):
+                    defaults['static_image_path'] = enemy_data['image']
+                else:
+                    defaults['image'] = enemy_data['image']
+
             enemy, created = Enemy.objects.get_or_create(
                 name=enemy_data['name'],
-                defaults={
-                    'base_hp': enemy_data['base_hp'],
-                    'attack': enemy_data['attack'],
-                    'defense': enemy_data['defense'],
-                    'speed': enemy_data['speed'],
-                    'description': enemy_data.get('description', '')
-                }
+                defaults=defaults
             )
             if created:
                 self.stdout.write(f'Created enemy: {enemy.name}')

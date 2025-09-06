@@ -252,6 +252,20 @@ class BuildingType(models.Model):
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=50, choices=BuildingTypeChoices.choices, unique=True)
     image = models.ImageField(upload_to='buildings/', blank=True, null=True)
+    # Campo adicional para rutas estáticas (ej: "img/campamento_principal.png")
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/campamento_principal.png")
+
+    def get_image_url(self):
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
+            from django.templatetags.static import static
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
+            return self.image.url
+        return None
 
     def __str__(self):
         return self.name
@@ -261,6 +275,20 @@ class ResourceType(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     image = models.ImageField(upload_to='resources/', blank=True, null=True)
+    # Campo adicional para rutas estáticas
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/oro.png")
+
+    def get_image_url(self):
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
+            from django.templatetags.static import static
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
+            return self.image.url
+        return None
 
     def __str__(self):
         return self.name
@@ -395,6 +423,23 @@ class Hero(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, default='')
     image = models.ImageField(upload_to='heroes/', blank=True, null=True)
+
+    # Campo adicional para rutas estáticas
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/hero_male.png")
+
+    def get_image_url(self):
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
+            from django.templatetags.static import static
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
+            return self.image.url
+        return None
+
+
 
     # Taxonomía
     race = models.CharField(max_length=20, choices=RaceChoices.choices)
@@ -676,6 +721,21 @@ class Enemy(models.Model):
     speed = models.IntegerField()
     skills = models.ManyToManyField("Skill", blank=True)
     created_at = models.DateTimeField(default=now)
+
+    # Campo adicional para rutas estáticas
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/enemy_sheep.png")
+
+    def get_image_url(self):
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
+            from django.templatetags.static import static
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
+            return self.image.url
+        return None
 
     # Compat: algunos módulos usan enemy.abilities
     @property
