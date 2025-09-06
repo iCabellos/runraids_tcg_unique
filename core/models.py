@@ -252,15 +252,18 @@ class BuildingType(models.Model):
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=50, choices=BuildingTypeChoices.choices, unique=True)
     image = models.ImageField(upload_to='buildings/', blank=True, null=True)
+    # Campo adicional para rutas estáticas (ej: "img/campamento_principal.png")
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/campamento_principal.png")
 
     def get_image_url(self):
-        """Get image URL, fallback to static files in production"""
-        if self.image:
-            # If it's already a static path, return as-is
-            if str(self.image).startswith('img/'):
-                from django.templatetags.static import static
-                return static(str(self.image))
-            # Otherwise use the media URL
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
+            from django.templatetags.static import static
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
             return self.image.url
         return None
 
@@ -272,15 +275,18 @@ class ResourceType(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     image = models.ImageField(upload_to='resources/', blank=True, null=True)
+    # Campo adicional para rutas estáticas
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/oro.png")
 
     def get_image_url(self):
-        """Get image URL, fallback to static files in production"""
-        if self.image:
-            # If it's already a static path, return as-is
-            if str(self.image).startswith('img/'):
-                from django.templatetags.static import static
-                return static(str(self.image))
-            # Otherwise use the media URL
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
+            from django.templatetags.static import static
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
             return self.image.url
         return None
 
@@ -418,31 +424,22 @@ class Hero(models.Model):
     description = models.TextField(blank=True, default='')
     image = models.ImageField(upload_to='heroes/', blank=True, null=True)
 
+    # Campo adicional para rutas estáticas
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/hero_male.png")
+
     def get_image_url(self):
-        """Get the correct image URL for both development and production"""
-        if not self.image:
-            return None
-
-        image_path = str(self.image)
-
-        # If it's a static path (starts with img/), use static URL
-        if image_path.startswith('img/'):
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
             from django.templatetags.static import static
-            return static(image_path)
-
-        # Otherwise, use the media URL (for actual uploads)
-        return self.image.url
-
-    def get_image_url(self):
-        """Get image URL, fallback to static files in production"""
-        if self.image:
-            # If it's already a static path, return as-is
-            if str(self.image).startswith('img/'):
-                from django.templatetags.static import static
-                return static(str(self.image))
-            # Otherwise use the media URL
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
             return self.image.url
         return None
+
+
 
     # Taxonomía
     race = models.CharField(max_length=20, choices=RaceChoices.choices)
@@ -725,14 +722,18 @@ class Enemy(models.Model):
     skills = models.ManyToManyField("Skill", blank=True)
     created_at = models.DateTimeField(default=now)
 
+    # Campo adicional para rutas estáticas
+    static_image_path = models.CharField(max_length=200, blank=True, null=True,
+                                       help_text="Ruta estática relativa, ej: img/enemy_sheep.png")
+
     def get_image_url(self):
-        """Get image URL, fallback to static files in production"""
-        if self.image:
-            # If it's already a static path, return as-is
-            if str(self.image).startswith('img/'):
-                from django.templatetags.static import static
-                return static(str(self.image))
-            # Otherwise use the media URL
+        """Get image URL, prioritizing static files over uploads"""
+        # Priorizar static_image_path si existe
+        if self.static_image_path:
+            from django.templatetags.static import static
+            return static(self.static_image_path)
+        # Fallback a image field para uploads reales
+        elif self.image:
             return self.image.url
         return None
 

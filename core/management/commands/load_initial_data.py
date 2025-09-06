@@ -161,7 +161,11 @@ class Command(BaseCommand):
             defaults = {'name': building_data['name']}
             # Support static image filenames from JSON (e.g., img/campamento_principal.png)
             if 'image' in building_data and building_data['image']:
-                defaults['image'] = building_data['image']
+                # Si es una ruta estática (empieza con img/), usar static_image_path
+                if str(building_data['image']).startswith('img/'):
+                    defaults['static_image_path'] = building_data['image']
+                else:
+                    defaults['image'] = building_data['image']
             building_type, created = BuildingType.objects.get_or_create(
                 type=building_data['type'],
                 defaults=defaults
@@ -215,7 +219,11 @@ class Command(BaseCommand):
                           'base_hp', 'base_atk_mag', 'base_atk_phy', 'base_def_mag', 'base_def_phy', 'base_speed',
                           'base_crit_chance']:
                     if k in hero_data:
-                        extra[k] = hero_data[k]
+                        if k == 'image' and hero_data[k] and str(hero_data[k]).startswith('img/'):
+                            # Si es una ruta estática, usar static_image_path
+                            extra['static_image_path'] = hero_data[k]
+                        else:
+                            extra[k] = hero_data[k]
                 # Backward fallback
                 if 'base_attack' in hero_data and 'base_atk_mag' not in extra and 'base_atk_phy' not in extra:
                     extra['base_atk_mag'] = hero_data['base_attack']
@@ -255,7 +263,11 @@ class Command(BaseCommand):
             }
 
             if 'image' in enemy_data and enemy_data['image']:
-                defaults['image'] = enemy_data['image']
+                # Si es una ruta estática (empieza con img/), usar static_image_path
+                if str(enemy_data['image']).startswith('img/'):
+                    defaults['static_image_path'] = enemy_data['image']
+                else:
+                    defaults['image'] = enemy_data['image']
 
             enemy, created = Enemy.objects.get_or_create(
                 name=enemy_data['name'],
