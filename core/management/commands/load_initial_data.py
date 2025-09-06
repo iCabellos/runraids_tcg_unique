@@ -160,13 +160,8 @@ class Command(BaseCommand):
             building_data.pop('pk', None)
             defaults = {'name': building_data['name']}
             # Support static image filenames from JSON (e.g., img/campamento_principal.png)
-            image_path = building_data.get('image')
-            if image_path:
-                # If a relative path under static is provided, prefix with STATIC_URL
-                if not (str(image_path).startswith('http') or str(image_path).startswith('/')):
-                    defaults['image'] = settings.STATIC_URL.rstrip('/') + '/' + image_path.lstrip('/')
-                else:
-                    defaults['image'] = image_path
+            if 'image' in building_data and building_data['image']:
+                defaults['image'] = building_data['image']
             building_type, created = BuildingType.objects.get_or_create(
                 type=building_data['type'],
                 defaults=defaults
