@@ -253,6 +253,17 @@ class BuildingType(models.Model):
     type = models.CharField(max_length=50, choices=BuildingTypeChoices.choices, unique=True)
     image = models.ImageField(upload_to='buildings/', blank=True, null=True)
 
+    def get_image_url(self):
+        """Get image URL, fallback to static files in production"""
+        if self.image:
+            # If it's already a static path, return as-is
+            if str(self.image).startswith('img/'):
+                from django.templatetags.static import static
+                return static(str(self.image))
+            # Otherwise use the media URL
+            return self.image.url
+        return None
+
     def __str__(self):
         return self.name
 
@@ -261,6 +272,17 @@ class ResourceType(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     image = models.ImageField(upload_to='resources/', blank=True, null=True)
+
+    def get_image_url(self):
+        """Get image URL, fallback to static files in production"""
+        if self.image:
+            # If it's already a static path, return as-is
+            if str(self.image).startswith('img/'):
+                from django.templatetags.static import static
+                return static(str(self.image))
+            # Otherwise use the media URL
+            return self.image.url
+        return None
 
     def __str__(self):
         return self.name
@@ -395,6 +417,17 @@ class Hero(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, default='')
     image = models.ImageField(upload_to='heroes/', blank=True, null=True)
+
+    def get_image_url(self):
+        """Get image URL, fallback to static files in production"""
+        if self.image:
+            # If it's already a static path, return as-is
+            if str(self.image).startswith('img/'):
+                from django.templatetags.static import static
+                return static(str(self.image))
+            # Otherwise use the media URL
+            return self.image.url
+        return None
 
     # Taxonomía
     race = models.CharField(max_length=20, choices=RaceChoices.choices)
@@ -676,6 +709,17 @@ class Enemy(models.Model):
     speed = models.IntegerField()
     skills = models.ManyToManyField("Skill", blank=True)
     created_at = models.DateTimeField(default=now)
+
+    def get_image_url(self):
+        """Get image URL, fallback to static files in production"""
+        if self.image:
+            # If it's already a static path, return as-is
+            if str(self.image).startswith('img/'):
+                from django.templatetags.static import static
+                return static(str(self.image))
+            # Otherwise use the media URL
+            return self.image.url
+        return None
 
     # Compat: algunos módulos usan enemy.abilities
     @property
