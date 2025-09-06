@@ -15,6 +15,24 @@
     "phone": 600000002,
     "password": "test1234",
     "resources": {"Oro": 800, "Madera": 400},
-    "heroes": []
+    "heroes": ["Novato"]
+  },
+  {
+    "name": "Victor",
+    "firstname": "John",
+    "email": "john@example.com",
+    "phone": 600000003,
+    "password": "test1234",
+    "resources": {"Oro": 800, "Madera": 400},
+    "heroes": ["Novato"]
+  },
+  {
+    "name": "Pepe",
+    "firstname": "John",
+    "email": "john@example.com",
+    "phone": 600000004,
+    "password": "test1234",
+    "resources": {"Oro": 800, "Madera": 400},
+    "heroes": ["Novato"]
   }
 ]

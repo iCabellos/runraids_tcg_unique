@@ -111,3 +111,76 @@ Un juego de cartas coleccionables (TCG) desarrollado con Django, diseñado para 
 ---
 
 _Disfruta de la estrategia, la cooperación y la progresión... ¡Bienvenido a **City Clash**!_
+
+---
+
+## 🧪 Cómo ejecutar y probar Raids asíncronas (Windows / PowerShell)
+
+1) Clonar e instalar dependencias
+- Requisitos: Python 3.11+, pip.
+- Opcional: crear venv.
+```
+python -m venv .venv
+. .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+2) Configurar entorno (.env) con SQLite local
+Crea el archivo `.env` en la raíz del proyecto con:
+```
+DEBUG=True
+SECRET_KEY=dev-secret
+# SQLite local (para desarrollo rápido)
+DATABASE_URL=sqlite:///db.sqlite3
+```
+Si prefieres PostgreSQL (p. ej. Supabase), define DATABASE_URL acorde.
+
+3) Migrar base de datos y cargar datos iniciales
+```
+python manage.py makemigrations
+python manage.py migrate
+python manage.py loaddata initial_data.json
+# o usa el comando incluido para datos iniciales detallados
+python manage.py load_initial_data
+```
+
+4) Arrancar el servidor
+```
+python manage.py runserver 127.0.0.1:8000
+```
+
+5) Iniciar sesión
+- Abre http://127.0.0.1:8000/index/
+- Usa uno de los usuarios de prueba definidos en datos iniciales (teléfono y contraseña).
+
+6) Probar el sistema de Raids asíncronas
+- Abre http://127.0.0.1:8000/raid/
+- En dos pestañas (o dos navegadores) pulsa “Buscar raid”.
+- La sala se llenará (max_players=2 por defecto), empezará la raid y verás:
+  - Participantes y sus héroes con HP.
+  - Enemigos y su HP.
+  - Turno actual (actor héroe o enemigo).
+  - Logs en tiempo casi real (polling cada 1s).
+- Cuando sea tu turno, aparecerán botones “Atacar” junto a cada enemigo vivo. Pulsa para enviar la decisión a `/api/raid/decision/`.
+- La IA enemiga actúa sola cuando le toca.
+- Al terminar (todos héroes KO o todos enemigos KO) verás el log `finish` con `winner`.
+
+7) Endpoints útiles (para debug)
+- POST `/api/raid/matchmaking/join/` → une a matchmaking y devuelve `{room_id}`.
+- GET `/api/raid/state/<room_id>/` → estado de la sala; además hace el “tick on read”.
+- POST `/api/raid/decision/` con `room_id` y `target_enemy_id` → aplica tu ataque si es tu turno.
+
+8) Solución de problemas
+- No tengo DB: añade `DATABASE_URL=sqlite:///db.sqlite3` al `.env`.
+- 401 unauthorized en API: asegúrate de iniciar sesión en `/index/` (sesión Django guarda `member_id`).
+- No veo enemigos: necesitas tener al menos 1 `Enemy` en DB (cargado por initial_data). Revisa Django Admin `/admin/`.
+- No aparecen botones de ataque: asegúrate de que sea tu turno (en el panel Turno verás actor_type=hero y tu member_id) y que tu héroe esté asignado (se autoasigna al llenar la sala).
+- CSRF: los endpoints de raid ya están exentos (@csrf_exempt) para el MVP; si cambias eso, añade encabezados CSRF en fetch.
+
+9) Ver decisiones en la DB
+- En Django Admin, revisa `RaidDecisionLog` para ver todos los eventos: join, start, hero_attack, enemy_attack, finish.
+
+10) Datos de apoyo
+- La vista de prueba está en `core/templates/raid_room.html`.
+- Lógica de raids en `core/services/raid_service.py`.
+- Modelos en `core/models.py` (RaidRoom, RaidParticipant, RaidEnemyInstance, RaidTurn, RaidDecisionLog).

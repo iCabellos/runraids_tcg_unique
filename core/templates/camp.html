@@ -44,6 +44,7 @@
     .modal-content {
       background-color: #222;
       margin: 10% auto;
+      margin-top: 30%;
       padding: 20px;
       border: 2px solid #00ffcc;
       width: 90%;
@@ -78,6 +79,102 @@
       color: #fff;
     }
 
+    /* 🔹 UID discreto arriba */
+  .top-uid {
+    position: fixed;
+    top: 6px;
+    right: 10px;
+    font-size: 11px;
+    letter-spacing: .5px;
+    color: rgba(255,255,255,.7);
+    background: rgba(0,0,0,.35);
+    padding: 3px 6px;
+    border-radius: 6px;
+    z-index: 1000;
+    user-select: text;
+  }
+
+  /* 🔹 Barra de recursos a la izquierda en horizontal */
+  .resource-bar {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 1000;
+    padding: 8px 10px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 10px;
+    backdrop-filter: blur(2px);
+  }
+
+  .resource-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 90px;
+  }
+
+  .resource-item img {
+    width: 28px; height: 28px; object-fit: contain; display: block;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.5));
+  }
+
+  .resource-amount {
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    text-shadow: 0 2px 3px rgba(0,0,0,.8), 0 0 3px rgba(0,0,0,.8);
+  }
+
+  .resource-name {
+    color: rgba(255,255,255,.8);
+    font-size: 12px;
+  }
+
+  @media (max-width: 520px) {
+    .resource-bar { gap: 8px; padding: 6px 8px; }
+    .resource-item { min-width: 70px; }
+    .resource-item img { width: 24px; height: 24px; }
+    .resource-amount { font-size: 14px; }
+    .resource-name { display:none; } /* ahorrar espacio en móvil */
+  }
+
+  /* Botón flotante de matchmaking */
+  .matchmaking-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    animation: pulse 2s infinite;
+  }
+
+  .matchmaking-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+    50% { box-shadow: 0 4px 25px rgba(255, 107, 107, 0.8); }
+    100% { box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+  }
+
     /* Responsive buildings */
     @media (max-width: 480px)  { .building { width: 220px; } }
     @media (min-width: 481px) and (max-width: 1100px) { .building { width: 400px; } }
@@ -89,6 +186,24 @@
   </style>
 </head>
 <body>
+<div class="top-uid">UID: {{ member.id }}</div>
+
+  <!-- 🔹 Barra de recursos del jugador -->
+    <div class="resource-bar">
+        {% for res in resources %}
+        <div class="resource-item">
+          {% if res.image %}
+            <img src="{{ res.image }}" alt="{{ res.name }}">
+          {% else %}
+            <img src="{% static 'img/resource_placeholder.png' %}" alt="{{ res.name }}">
+          {% endif %}
+          <div>
+            <div class="resource-amount">{{ res.amount }}</div>
+            <div class="resource-name">{{ res.name }}</div>
+          </div>
+        </div>
+        {% endfor %}
+    </div>
   <div class="city-wrapper">
     {% for building in buildings %}
 
@@ -135,7 +250,8 @@
             <p>Costes para subir al nivel {{ building.level|add:1 }}:</p>
             <ul>
               {% for cost in building.upgrade_costs %}
-                <li>{{ cost.resource_type.name }}: {{ cost.amount }}</li>
+                <li><img src="{{ cost.resource_type.image.url }}" alt="{{ cost.resource_type.name }}"
+                         style="width:40px;height:40px;object-fit:contain;"/> {{ cost.amount }}</li>
               {% endfor %}
             </ul>
             {% if building.can_upgrade %}
@@ -155,6 +271,11 @@
 
     {% endfor %}
   </div>
+
+  <!-- Botón flotante para matchmaking -->
+  <a href="{% url 'matchmaking' %}" class="matchmaking-btn" title="Matchmaking">
+    ⚔️
+  </a>
 
   <script>
     function openModal(id) {

@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password
 from django.utils.timezone import now
+from django.db.models import F, Value
 import math
 
 
@@ -259,6 +260,7 @@ class BuildingType(models.Model):
 class ResourceType(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
+    image = models.ImageField(upload_to='resources/', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -515,8 +517,10 @@ class PlayerHero(models.Model):
     # Progresión: el nivel se deriva de 'experience'
     experience = models.IntegerField(default=0)
 
-    created_at = models.DateTimeField(default=now)
+    # Vida persistente (modo extracción): si no está definida, por defecto 0
+    current_hp = models.IntegerField(default=0)
 
+    created_at = models.DateTimeField(default=now)
     class Meta:
         unique_together = ('member', 'hero')
 
@@ -679,3 +683,355 @@ class Enemy(models.Model):
 
     def __str__(self):
         return f'{self.name} (lvl {self.level})'
+<<<<<<< HEAD
+
+
+# =============================================================
+#  PULLS / BANNERS — pools compartidos y recompensas compuestas
+# =============================================================
+import random
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+class Banner(models.Model):
+    """
+    Banner de invocación:
+      - promo_rate: prob total de héroe promocional (0..1)
+      - normal_rate: prob total de héroe NO promocional (0..1)
+      - si no cae en ninguno: se otorga una recompensa alternativa (a partes iguales entre las definidas)
+      - cost_resource / cost_amount: coste por tirada
+    """
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True, default='')
+    image = models.ImageField(upload_to='banners/', blank=True, null=True)
+
+    starts_at = models.DateTimeField(blank=True, null=True)
+    ends_at   = models.DateTimeField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    cost_resource = models.ForeignKey("ResourceType", on_delete=models.PROTECT, related_name="pull_cost_banners")
+    cost_amount   = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
+
+    promo_rate  = models.FloatField(default=0.03, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    normal_rate = models.FloatField(default=0.10, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="banner_rates_sum_le_1",
+                check=(
+                        models.Q(promo_rate__gte=0.0) &
+                        models.Q(normal_rate__gte=0.0) &
+                        models.Q(promo_rate__lte=1.0) &
+                        models.Q(normal_rate__lte=1.0)
+                )
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+    # ---- Pools ----
+    def promo_pool(self):
+        return self.entries.filter(is_promotional=True)
+
+    def normal_pool(self):
+        return self.entries.filter(is_promotional=False)
+
+    def effective_per_hero_rate(self, promotional: bool) -> float:
+        """Probabilidad por héroe dentro de su pool (uniforme)."""
+        if promotional:
+            n = self.promo_pool().count()
+            return (self.promo_rate / n) if n else 0.0
+        n = self.normal_pool().count()
+        return (self.normal_rate / n) if n else 0.0
+
+    # ---- Tirada (simulación; no persiste) ----
+    def roll_once(self, rng: random.Random | None = None):
+        """
+        Devuelve:
+          - {'type':'hero', 'hero_id': X, 'promotional': True/False}
+          - {'type':'reward', 'items': [{'resource_type_id':Y, 'amount':N}, ...]}
+          - {'type':'none'} si no hay pools ni recompensas (caso borde)
+        """
+        rnd = rng or random
+        r = rnd.random()
+
+        # 1) pool promocional
+        if r < self.promo_rate:
+            ids = list(self.promo_pool().values_list('hero_id', flat=True))
+            if ids:
+                return {"type": "hero", "hero_id": rnd.choice(ids), "promotional": True}
+
+        # 2) pool normal
+        if r < (self.promo_rate + self.normal_rate):
+            ids = list(self.normal_pool().values_list('hero_id', flat=True))
+            if ids:
+                return {"type": "hero", "hero_id": rnd.choice(ids), "promotional": False}
+
+        # 3) recompensas alternativas (uniforme entre las opciones definidas)
+        reward_defs = list(self.rewards.all())
+        if not reward_defs:
+            return {"type": "none"}
+
+        reward_def = rnd.choice(reward_defs)
+        items = []
+        for it in reward_def.items.all():
+            amount = rnd.randint(it.min_amount, it.max_amount)
+            items.append({"resource_type_id": it.resource_type_id, "amount": amount})
+
+        return {"type": "reward", "items": items}
+
+
+class BannerEntry(models.Model):
+    """
+    Hero entry del banner. No hay weight por héroe: la probabilidad individual
+    se reparte a partes iguales dentro de su pool (promo o normal).
+    """
+    banner = models.ForeignKey(Banner, on_delete=models.CASCADE, related_name="entries")
+    hero   = models.ForeignKey("Hero", on_delete=models.CASCADE, related_name="banner_entries")
+    is_promotional = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('banner', 'hero')
+
+    def __str__(self):
+        tag = "PROMO" if self.is_promotional else "NORMAL"
+        return f"{self.banner.name} · {self.hero.name} [{tag}]"
+
+
+class BannerReward(models.Model):
+    """
+    Recompensa alternativa compuesta (una 'opción' del banner). La selección entre
+    varias BannerReward se hace a PARTES IGUALES (uniforme). Cada BannerReward
+    define 1..N items (recursos), cada uno con su propio rango min..max.
+    Ejemplos:
+      - Solo madera (100..200)
+      - Solo elixir (10..30)
+      - Madera (30..50) + Elixir (5..10)
+    """
+    banner = models.ForeignKey(Banner, on_delete=models.CASCADE, related_name="rewards")
+    name   = models.CharField(max_length=100, blank=True, default="Recompensa")
+
+    def __str__(self):
+        return f"{self.banner.name} · {self.name} ({self.items.count()} items)"
+
+
+class BannerRewardItem(models.Model):
+    """
+    Ítem individual de una recompensa compuesta: un tipo de recurso con rango cantidad.
+    """
+    reward = models.ForeignKey(BannerReward, on_delete=models.CASCADE, related_name="items")
+    resource_type = models.ForeignKey("ResourceType", on_delete=models.CASCADE)
+    min_amount = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    max_amount = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="reward_item_min_le_max",
+                check=models.Q(min_amount__gt=0) & models.Q(max_amount__gte=models.F('min_amount'))
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.reward.name} · {self.resource_type.name} [{self.min_amount}-{self.max_amount}]"
+
+
+# =============================================================
+#  LOG DE PULLS (Histórico de tiradas)
+# =============================================================
+class BannerPullLog(models.Model):
+    member = models.ForeignKey("Member", on_delete=models.CASCADE, related_name="pull_logs")
+    banner = models.ForeignKey(Banner, on_delete=models.CASCADE, related_name="pull_logs")
+
+    RESULT_CHOICES = [
+        ('hero_promo', 'Héroe promocional'),
+        ('hero_normal', 'Héroe normal'),
+        ('reward', 'Recompensa'),
+        ('none', 'Ninguno'),
+    ]
+    result_type = models.CharField(max_length=20, choices=RESULT_CHOICES)
+
+    hero = models.ForeignKey("Hero", on_delete=models.SET_NULL, null=True, blank=True)
+    reward_snapshot = models.JSONField(blank=True, null=True, help_text="Listado de items de recompensa otorgados")
+
+    created_at = models.DateTimeField(default=now)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.member.name} → {self.banner.name} [{self.result_type}] @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
+# =============================================================
+#  RAIDS ESTRUCTURADAS (definiciones de raids con oleadas)
+# =============================================================
+class Raid(models.Model):
+    """Definición de una raid con múltiples oleadas de enemigos"""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    image = models.ImageField(upload_to='raids/', blank=True, null=True)
+    difficulty = models.CharField(max_length=20, choices=[
+        ('easy', 'Fácil'),
+        ('normal', 'Normal'),
+        ('hard', 'Difícil'),
+        ('nightmare', 'Pesadilla'),
+    ], default='normal')
+    min_players = models.PositiveIntegerField(default=1)
+    max_players = models.PositiveIntegerField(default=4)
+    created_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_difficulty_display()})"
+
+
+class RaidWave(models.Model):
+    """Oleada de enemigos dentro de una raid"""
+    raid = models.ForeignKey(Raid, on_delete=models.CASCADE, related_name="waves")
+    wave_number = models.PositiveIntegerField()
+    name = models.CharField(max_length=100, blank=True, default='')
+
+    class Meta:
+        unique_together = ("raid", "wave_number")
+        ordering = ["raid", "wave_number"]
+
+    def __str__(self):
+        return f"{self.raid.name} - Oleada {self.wave_number}"
+
+
+class RaidEnemy(models.Model):
+    """Enemigo específico en una oleada de raid"""
+    wave = models.ForeignKey(RaidWave, on_delete=models.CASCADE, related_name="enemies")
+    enemy = models.ForeignKey(Enemy, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    level_modifier = models.FloatField(default=1.0, help_text="Multiplicador de nivel (1.0 = nivel base)")
+
+    def __str__(self):
+        return f"{self.wave} - {self.quantity}x {self.enemy.name}"
+
+
+# =============================================================
+#  RAIDS MULTIJUGADOR (mínimo viable asíncrono)
+# =============================================================
+class RaidRoom(models.Model):
+    name = models.CharField(max_length=100, blank=True, default="Raid Room")
+    owner = models.ForeignKey("Member", on_delete=models.SET_NULL, null=True, blank=True, related_name="owned_raids")
+    raid = models.ForeignKey(Raid, on_delete=models.SET_NULL, null=True, blank=True, help_text="Raid estructurada (opcional)")
+    max_players = models.PositiveIntegerField(default=4)
+    state = models.CharField(max_length=20, default="waiting", choices=[
+        ("waiting", "Waiting"),
+        ("ready", "Ready"),
+        ("in_progress", "In Progress"),
+        ("finished", "Finished"),
+    ])
+    wave_index = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(default=now)
+    updated_at = models.DateTimeField(auto_now=True)
+    tick_interval_ms = models.PositiveIntegerField(default=1000)
+    last_tick_at = models.DateTimeField(null=True, blank=True)
+    random_seed = models.PositiveIntegerField(default=0)
+    # Timeout / closure
+    closed = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"RaidRoom #{self.id} ({self.state})"
+
+
+class Team(models.Model):
+    owner = models.ForeignKey("Member", on_delete=models.CASCADE, related_name="teams")
+    name = models.CharField(max_length=100, blank=True, default="Equipo")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner"], condition=models.Q(is_active=True), name="one_active_team_per_member")
+        ]
+
+    def __str__(self):
+        return f"Team #{self.id} de {self.owner.name}"
+
+
+class TeamSlot(models.Model):
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="slots")
+    player_hero = models.ForeignKey("PlayerHero", on_delete=models.CASCADE, related_name="team_slots")
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["team", "player_hero"], name="unique_playerhero_per_team"),
+        ]
+
+    def clean(self):
+        # Enforce max 4 and no duplicate base Hero within team
+        if self.team.slots.exclude(pk=self.pk).count() >= 4:
+            from django.core.exceptions import ValidationError
+            raise ValidationError("El equipo ya tiene 4 héroes")
+        base_ids = set(self.team.slots.exclude(pk=self.pk).values_list("player_hero__hero_id", flat=True))
+        if self.player_hero and self.player_hero.hero_id in base_ids:
+            from django.core.exceptions import ValidationError
+            raise ValidationError("No puedes repetir el mismo Hero en el equipo")
+
+    def __str__(self):
+        return f"Team {self.team_id} slot {self.position}: PH#{self.player_hero_id}"
+
+
+class RaidParticipant(models.Model):
+    room = models.ForeignKey(RaidRoom, on_delete=models.CASCADE, related_name="participants")
+    member = models.ForeignKey("Member", on_delete=models.CASCADE, related_name="raid_participations")
+    hero = models.ForeignKey("PlayerHero", on_delete=models.SET_NULL, null=True, blank=True)
+    is_ready = models.BooleanField(default=False)
+    is_alive = models.BooleanField(default=True)
+    player_color = models.PositiveIntegerField(default=1, help_text="Color del jugador (1-4)")
+    joined_at = models.DateTimeField(default=now)
+
+    class Meta:
+        unique_together = ("room", "member")
+
+    def __str__(self):
+        return f"{self.member.name} in Room {self.room_id}"
+
+
+class RaidEnemyInstance(models.Model):
+    room = models.ForeignKey(RaidRoom, on_delete=models.CASCADE, related_name="enemies")
+    enemy = models.ForeignKey("Enemy", on_delete=models.CASCADE)
+    current_hp = models.PositiveIntegerField(default=0)
+    max_hp = models.PositiveIntegerField(default=0)
+    speed = models.IntegerField(default=100)
+    is_alive = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Enemy {self.enemy.name} (HP {self.current_hp}/{self.max_hp}) in Room {self.room_id}"
+
+
+class RaidTurn(models.Model):
+    room = models.ForeignKey(RaidRoom, on_delete=models.CASCADE, related_name="turns")
+    index = models.PositiveIntegerField()
+    actor_type = models.CharField(max_length=10, choices=[("hero", "Hero"), ("enemy", "Enemy")])
+    participant = models.ForeignKey(RaidParticipant, on_delete=models.SET_NULL, null=True, blank=True)
+    enemy_instance = models.ForeignKey(RaidEnemyInstance, on_delete=models.SET_NULL, null=True, blank=True)
+    hero_instance = models.ForeignKey("PlayerHero", on_delete=models.SET_NULL, null=True, blank=True, help_text="Héroe específico que tiene el turno")
+    resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=now)
+
+    class Meta:
+        unique_together = ("room", "index")
+        ordering = ["room_id", "index"]
+
+
+class RaidDecisionLog(models.Model):
+    room = models.ForeignKey(RaidRoom, on_delete=models.CASCADE, related_name="decision_logs")
+    participant = models.ForeignKey(RaidParticipant, on_delete=models.SET_NULL, null=True, blank=True)
+    turn = models.ForeignKey(RaidTurn, on_delete=models.SET_NULL, null=True, blank=True)
+    actor = models.CharField(max_length=20, blank=True, default="")  # human-readable (hero/enemy name)
+    action_type = models.CharField(max_length=30)  # join/start/hero_attack/enemy_attack/skip
+    payload = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(default=now)
+
+    class Meta:
+        ordering = ["-created_at"]
