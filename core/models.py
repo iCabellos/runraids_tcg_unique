@@ -419,6 +419,21 @@ class Hero(models.Model):
     image = models.ImageField(upload_to='heroes/', blank=True, null=True)
 
     def get_image_url(self):
+        """Get the correct image URL for both development and production"""
+        if not self.image:
+            return None
+
+        image_path = str(self.image)
+
+        # If it's a static path (starts with img/), use static URL
+        if image_path.startswith('img/'):
+            from django.templatetags.static import static
+            return static(image_path)
+
+        # Otherwise, use the media URL (for actual uploads)
+        return self.image.url
+
+    def get_image_url(self):
         """Get image URL, fallback to static files in production"""
         if self.image:
             # If it's already a static path, return as-is

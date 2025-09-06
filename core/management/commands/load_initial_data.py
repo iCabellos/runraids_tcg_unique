@@ -220,16 +220,7 @@ class Command(BaseCommand):
                           'base_hp', 'base_atk_mag', 'base_atk_phy', 'base_def_mag', 'base_def_phy', 'base_speed',
                           'base_crit_chance']:
                     if k in hero_data:
-                        if k == 'image' and hero_data[k]:
-                            # Process image path for static files
-                            image_path = hero_data[k]
-                            if not str(image_path).startswith('/') and not str(image_path).startswith('http'):
-                                # It's a relative path, prefix with STATIC_URL
-                                extra[k] = settings.STATIC_URL.rstrip('/') + '/' + str(image_path).lstrip('/')
-                            else:
-                                extra[k] = image_path
-                        else:
-                            extra[k] = hero_data[k]
+                        extra[k] = hero_data[k]
                 # Backward fallback
                 if 'base_attack' in hero_data and 'base_atk_mag' not in extra and 'base_atk_phy' not in extra:
                     extra['base_atk_mag'] = hero_data['base_attack']
@@ -269,12 +260,7 @@ class Command(BaseCommand):
             }
 
             if 'image' in enemy_data and enemy_data['image']:
-                image_path = enemy_data['image']
-                if not str(image_path).startswith('/') and not str(image_path).startswith('http'):
-                    # It's a relative path, prefix with STATIC_URL
-                    defaults['image'] = settings.STATIC_URL.rstrip('/') + '/' + str(image_path).lstrip('/')
-                else:
-                    defaults['image'] = image_path
+                defaults['image'] = enemy_data['image']
 
             enemy, created = Enemy.objects.get_or_create(
                 name=enemy_data['name'],

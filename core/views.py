@@ -393,7 +393,7 @@ class RaidRoomPage(TemplateView):
                 "id": b.id,
                 "name": b.name,
                 "description": b.description,
-                "image": getattr(b, 'image', None) and b.image.url,
+                "image": getattr(b, 'image', None) and b.image.url,  # Banner images are actual uploads
                 "cost": {
                     "resource_name": b.cost_resource.name,
                     "resource_image": b.cost_resource.get_image_url(),
@@ -941,7 +941,7 @@ def api_raids_available(request):
             "difficulty_display": raid.get_difficulty_display(),
             "min_players": raid.min_players,
             "max_players": raid.max_players,
-            "image": getattr(raid, 'image', None) and raid.image.url,
+            "image": getattr(raid, 'image', None) and raid.image.url,  # Raid images are actual uploads
         })
     return JsonResponse({"ok": True, "raids": raids_data})
 
