@@ -3,7 +3,7 @@
     "name": "Novato",
     "codename": "novato",
     "description": "Héroe básico de prueba.",
-    "image": null,
+    "image": "img/Base_hero_male.png",
     "race": "elf",
     "klass": "mage",
     "rarity": "common",
