@@ -4,8 +4,8 @@
   {"type": "xp_farming", "name": "Edificio almacenador de experiéncia", "image": null},
   {"type": "market", "name": "Mercado", "image": null},
   {"type": "alliance", "name": "Centro de la alianza", "image": null},
-  {"type": "camp", "name": "Campamento principal", "image": "img/campamento_principal.png"},
-  {"type": "cf", "name": "Hoguera", "image": "img/hoguera.png"},
-  {"type": "store", "name": "Alijo principal", "image": "img/alijo_principal.png"},
-  {"type": "wc_portal", "name": "Baño invocador", "image": null}
+  {"type": "camp", "name": "Campamento principal", "image": "buildings/campamento_principal.png"},
+  {"type": "cf", "name": "Hoguera", "image": "buildings/hoguera.png"},
+  {"type": "store", "name": "Alijo principal", "image": "buildings/alijo_principal.png"},
+  {"type": "wc_portal", "name": "Baño invocador", "image": "buildings/banyo_invocador.png"}
 ]

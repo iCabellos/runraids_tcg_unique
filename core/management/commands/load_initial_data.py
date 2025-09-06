@@ -150,8 +150,9 @@ class Command(BaseCommand):
             # Process image path for static files
             defaults = {'description': resource_data.get('description', '')}
             if 'image' in resource_data and resource_data['image']:
-                # Si es una ruta estática (empieza con img/), usar static_image_path
-                if str(resource_data['image']).startswith('img/'):
+                # Si es una ruta estática (empieza con img/, resources/, etc.), usar static_image_path
+                image_path = str(resource_data['image'])
+                if any(image_path.startswith(prefix) for prefix in ['img/', 'buildings/', 'heroes/', 'enemies/', 'resources/']):
                     defaults['static_image_path'] = resource_data['image']
                 else:
                     defaults['image'] = resource_data['image']
@@ -171,8 +172,9 @@ class Command(BaseCommand):
             defaults = {'name': building_data['name']}
             # Support static image filenames from JSON (e.g., img/campamento_principal.png)
             if 'image' in building_data and building_data['image']:
-                # Si es una ruta estática (empieza con img/), usar static_image_path
-                if str(building_data['image']).startswith('img/'):
+                # Si es una ruta estática (empieza con img/, buildings/, etc.), usar static_image_path
+                image_path = str(building_data['image'])
+                if any(image_path.startswith(prefix) for prefix in ['img/', 'buildings/', 'heroes/', 'enemies/', 'resources/']):
                     defaults['static_image_path'] = building_data['image']
                 else:
                     defaults['image'] = building_data['image']
@@ -229,9 +231,13 @@ class Command(BaseCommand):
                           'base_hp', 'base_atk_mag', 'base_atk_phy', 'base_def_mag', 'base_def_phy', 'base_speed',
                           'base_crit_chance']:
                     if k in hero_data:
-                        if k == 'image' and hero_data[k] and str(hero_data[k]).startswith('img/'):
+                        if k == 'image' and hero_data[k]:
                             # Si es una ruta estática, usar static_image_path
-                            extra['static_image_path'] = hero_data[k]
+                            image_path = str(hero_data[k])
+                            if any(image_path.startswith(prefix) for prefix in ['img/', 'buildings/', 'heroes/', 'enemies/', 'resources/']):
+                                extra['static_image_path'] = hero_data[k]
+                            else:
+                                extra[k] = hero_data[k]
                         else:
                             extra[k] = hero_data[k]
                 # Backward fallback
@@ -273,8 +279,9 @@ class Command(BaseCommand):
             }
 
             if 'image' in enemy_data and enemy_data['image']:
-                # Si es una ruta estática (empieza con img/), usar static_image_path
-                if str(enemy_data['image']).startswith('img/'):
+                # Si es una ruta estática (empieza con img/, enemies/, etc.), usar static_image_path
+                image_path = str(enemy_data['image'])
+                if any(image_path.startswith(prefix) for prefix in ['img/', 'buildings/', 'heroes/', 'enemies/', 'resources/']):
                     defaults['static_image_path'] = enemy_data['image']
                 else:
                     defaults['image'] = enemy_data['image']

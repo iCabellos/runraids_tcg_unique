@@ -8,9 +8,9 @@ def update_resource_static_images(apps, schema_editor):
     
     # Mapping of resource names to static image paths
     resource_images = {
-        'Oro': 'img/campamento_principal.png',
-        'Madera': 'img/alijo_principal.png',
-        'Elixir': 'img/hoguera.png',
+        'Oro': 'resources/gold.png',
+        'Madera': 'resources/wood.png',
+        'Elixir': 'resources/elixir.png',
     }
     
     for resource_name, image_path in resource_images.items():

@@ -1,7 +1,7 @@
 [
   {
     "name": "Oveja",
-    "image": "img/Base_hero_female.png",
+    "image": "enemies/oveja.png",
     "description": "Una oveja mansa de nivel 1.",
     "level": 1,
     "base_hp": 5,

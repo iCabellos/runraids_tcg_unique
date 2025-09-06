@@ -1,5 +1,5 @@
 [
-  {"name": "Oro", "description": "Moneda y mejoras", "image": "img/campamento_principal.png"},
-  {"name": "Madera", "description": "Construcción básica", "image": "img/alijo_principal.png"},
-  {"name": "Elixir", "description": "Energía mágica y mejoras", "image": "img/hoguera.png"}
+  {"name": "Oro", "description": "Moneda y mejoras", "image": "resources/gold.png"},
+  {"name": "Madera", "description": "Construcción básica", "image": "resources/wood.png"},
+  {"name": "Elixir", "description": "Energía mágica y mejoras", "image": "resources/elixir.png"}
 ]

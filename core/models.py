@@ -264,6 +264,11 @@ class BuildingType(models.Model):
             return static(self.static_image_path)
         # Fallback a image field para uploads reales
         elif self.image:
+            # Si es una ruta estática (buildings/, heroes/, enemies/, resources/), usar static
+            image_path = str(self.image)
+            if any(image_path.startswith(prefix) for prefix in ['buildings/', 'heroes/', 'enemies/', 'resources/', 'img/']):
+                from django.templatetags.static import static
+                return static(image_path)
             return self.image.url
         return None
 
@@ -287,6 +292,11 @@ class ResourceType(models.Model):
             return static(self.static_image_path)
         # Fallback a image field para uploads reales
         elif self.image:
+            # Si es una ruta estática (buildings/, heroes/, enemies/, resources/), usar static
+            image_path = str(self.image)
+            if any(image_path.startswith(prefix) for prefix in ['buildings/', 'heroes/', 'enemies/', 'resources/', 'img/']):
+                from django.templatetags.static import static
+                return static(image_path)
             return self.image.url
         return None
 
@@ -436,6 +446,11 @@ class Hero(models.Model):
             return static(self.static_image_path)
         # Fallback a image field para uploads reales
         elif self.image:
+            # Si es una ruta estática (buildings/, heroes/, enemies/, resources/), usar static
+            image_path = str(self.image)
+            if any(image_path.startswith(prefix) for prefix in ['buildings/', 'heroes/', 'enemies/', 'resources/', 'img/']):
+                from django.templatetags.static import static
+                return static(image_path)
             return self.image.url
         return None
 
@@ -734,6 +749,11 @@ class Enemy(models.Model):
             return static(self.static_image_path)
         # Fallback a image field para uploads reales
         elif self.image:
+            # Si es una ruta estática (buildings/, heroes/, enemies/, resources/), usar static
+            image_path = str(self.image)
+            if any(image_path.startswith(prefix) for prefix in ['buildings/', 'heroes/', 'enemies/', 'resources/', 'img/']):
+                from django.templatetags.static import static
+                return static(image_path)
             return self.image.url
         return None
 
