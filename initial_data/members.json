@@ -1,7 +1,7 @@
 [
   {
-    "name": "Cabellos",
-    "firstname": "Ivan",
+    "name": "Ivan",
+    "firstname": "Cabellos",
     "email": "ivan@example.com",
     "phone": 600000001,
     "password": "test1234",
@@ -9,12 +9,30 @@
     "heroes": ["Novato"]
   },
   {
-    "name": "Doe",
+    "name": "Alex",
     "firstname": "John",
     "email": "john@example.com",
     "phone": 600000002,
     "password": "test1234",
     "resources": {"Oro": 800, "Madera": 400},
-    "heroes": []
+    "heroes": ["Novato"]
+  },
+  {
+    "name": "Victor",
+    "firstname": "John",
+    "email": "john@example.com",
+    "phone": 600000003,
+    "password": "test1234",
+    "resources": {"Oro": 800, "Madera": 400},
+    "heroes": ["Novato"]
+  },
+  {
+    "name": "Doe",
+    "firstname": "John",
+    "email": "john@example.com",
+    "phone": 600000004,
+    "password": "test1234",
+    "resources": {"Oro": 800, "Madera": 400},
+    "heroes": ["Novato"]
   }
 ]

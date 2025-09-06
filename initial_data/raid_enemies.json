@@ -1,0 +1,14 @@
+[
+  {
+    "wave": {"raid": "Prado de las Ovejas", "wave_number": 1},
+    "enemy": "Oveja",
+    "quantity": 2,
+    "level_modifier": 1.0
+  },
+  {
+    "wave": {"raid": "Prado de las Ovejas", "wave_number": 2},
+    "enemy": "Oveja", 
+    "quantity": 3,
+    "level_modifier": 1.2
+  }
+]

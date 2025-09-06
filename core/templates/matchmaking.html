@@ -1,0 +1,672 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Matchmaking - RunRaids TCG</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+    html, body {
+      margin: 0; padding: 0; width: 100%; min-height: 100vh;
+      font-family: 'Orbitron', sans-serif;
+      background: url('{% static "img/background_camp.png" %}') no-repeat center center fixed;
+      background-size: cover;
+      overflow-x: hidden;
+    }
+
+    .container {
+      position: relative; width: 100%; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px; box-sizing: border-box;
+      padding-bottom: 100px; /* Espacio para botones en móvil */
+    }
+
+    .top-uid {
+      position: fixed; top: 6px; right: 10px; font-size: 11px;
+      letter-spacing: .5px; color: rgba(255,255,255,.7);
+      background: rgba(0,0,0,.35); padding: 3px 6px; border-radius: 6px;
+      z-index: 1000; user-select: text;
+    }
+
+    .title {
+      color: #00ffcc; font-size: 28px; font-weight: 600;
+      text-shadow: 0 0 10px #00ffcc; margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .section {
+      background: rgba(0,0,0,0.8); border: 2px solid #00ffcc;
+      border-radius: 15px; padding: 20px; margin-bottom: 20px;
+      width: 100%; max-width: 800px; color: white;
+    }
+
+    .section h2 {
+      color: #00ffcc; margin-top: 0; margin-bottom: 15px;
+      font-size: 20px; text-align: center;
+    }
+
+    .team-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 15px; margin-bottom: 20px;
+      width: 100%;
+    }
+
+    .hero-card {
+      background: rgba(255,255,255,0.1); border: 2px solid transparent;
+      border-radius: 10px; padding: 10px; text-align: center;
+      cursor: pointer; transition: all 0.3s ease;
+      aspect-ratio: 3/4; display: flex; flex-direction: column;
+      justify-content: space-between; min-height: 120px;
+      position: relative; overflow: hidden;
+    }
+
+    .hero-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(45deg, transparent 30%, rgba(0,255,204,0.1) 50%, transparent 70%);
+      transform: translateX(-100%); transition: transform 0.6s ease;
+    }
+
+    .hero-card:hover::before {
+      transform: translateX(100%);
+    }
+
+    .hero-card:hover {
+      border-color: #00ffcc; transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,255,204,0.3);
+    }
+
+    .hero-card.empty {
+      background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.3);
+      cursor: default; justify-content: center; align-items: center;
+      animation: pulse-empty 2s infinite;
+    }
+
+    @keyframes pulse-empty {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
+    }
+
+    .hero-card.selected {
+      border-color: #00ffcc; background: rgba(0,255,204,0.2);
+      box-shadow: 0 0 20px rgba(0,255,204,0.5);
+      animation: glow-selected 1.5s infinite alternate;
+    }
+
+    @keyframes glow-selected {
+      from { box-shadow: 0 0 20px rgba(0,255,204,0.5); }
+      to { box-shadow: 0 0 30px rgba(0,255,204,0.8); }
+    }
+
+    .hero-card:hover {
+      border-color: #00ffcc; background: rgba(0,255,204,0.1);
+    }
+
+    .hero-card.selected {
+      border-color: #00ff00; background: rgba(0,255,0,0.2);
+    }
+
+    .hero-card img {
+      width: 60px; height: 60px; object-fit: cover;
+      border-radius: 50%; margin-bottom: 8px; align-self: center;
+    }
+
+    .hero-name {
+      font-weight: bold; margin-bottom: 3px; font-size: 12px;
+    }
+
+    .hero-hp {
+      font-size: 10px; color: #ff6b6b;
+    }
+
+    .hero-hp.dead {
+      color: #ff0000; font-weight: bold;
+    }
+
+    .hero-card.dead {
+      opacity: 0.5; border-color: #ff0000;
+      background: rgba(255, 0, 0, 0.1);
+    }
+
+    .raid-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px; margin-bottom: 20px;
+    }
+
+    .raid-card {
+      background: rgba(255,255,255,0.1); border: 2px solid transparent;
+      border-radius: 15px; padding: 20px; text-align: center;
+      cursor: pointer; transition: all 0.3s ease;
+      position: relative; overflow: hidden;
+    }
+
+    .raid-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(0,255,204,0.1) 50%, transparent 100%);
+      transform: scale(0); transition: transform 0.4s ease;
+      border-radius: 15px;
+    }
+
+    .raid-card:hover::before {
+      transform: scale(1);
+    }
+
+    .raid-card:hover {
+      border-color: #00ffcc; transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 15px 40px rgba(0,255,204,0.4);
+    }
+
+    .raid-card.selected {
+      border-color: #00ffcc; background: rgba(0,255,204,0.2);
+      box-shadow: 0 0 25px rgba(0,255,204,0.6);
+      animation: selected-pulse 2s infinite;
+    }
+
+    @keyframes selected-pulse {
+      0%, 100% { box-shadow: 0 0 25px rgba(0,255,204,0.6); }
+      50% { box-shadow: 0 0 35px rgba(0,255,204,0.9); }
+    }
+
+    .raid-difficulty {
+      display: inline-block; padding: 4px 8px; border-radius: 4px;
+      font-size: 12px; font-weight: bold; margin-bottom: 10px;
+    }
+
+    .difficulty-easy { background: #4CAF50; }
+    .difficulty-normal { background: #FF9800; }
+    .difficulty-hard { background: #F44336; }
+    .difficulty-nightmare { background: #9C27B0; }
+
+    .buttons {
+      display: flex; gap: 15px; justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px; border: none; border-radius: 8px;
+      font-family: 'Orbitron', sans-serif; font-weight: 600;
+      cursor: pointer; transition: all 0.3s ease;
+      text-decoration: none; display: inline-block;
+      position: relative; overflow: hidden;
+    }
+
+    .btn::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+      transition: transform 0.1s ease;
+    }
+
+    .btn-primary {
+      background: #00ffcc; color: #000;
+    }
+
+    .btn-primary:hover {
+      background: #00e6b8; transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(0,255,204,0.5);
+    }
+
+    .btn-secondary {
+      background: #666; color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #777; transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(119,119,119,0.5);
+    }
+
+    .btn-success {
+      background: #28a745; color: white;
+    }
+
+    .btn-success:hover {
+      background: #218838; transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(40,167,69,0.5);
+    }
+
+    .btn:disabled {
+      background: #333; color: #666; cursor: not-allowed;
+      transform: none; box-shadow: none;
+    }
+
+    .btn:disabled::before {
+      display: none;
+    }
+
+    .create-team-btn {
+      background: rgba(255,255,255,0.1); border: 2px dashed #00ffcc;
+      border-radius: 10px; padding: 40px 20px; text-align: center;
+      cursor: pointer; transition: all 0.3s ease; color: #00ffcc;
+    }
+
+    .create-team-btn:hover {
+      background: rgba(0,255,204,0.1);
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 768px) {
+      .container { padding: 10px; padding-bottom: 120px; }
+      .title { font-size: 24px; }
+      .section { padding: 15px; }
+      .raid-grid { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .hero-card { padding: 8px; min-height: 100px; }
+      .hero-card img { width: 50px; height: 50px; }
+      .hero-name { font-size: 11px; }
+      .hero-hp { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+<div class="top-uid">UID: {{ member.id }}</div>
+
+<div class="container">
+  <h1 class="title">🎯 Matchmaking</h1>
+
+  <!-- Selección de Equipo -->
+  <div class="section">
+    <h2>🛡️ Tu Equipo (máximo 4 héroes)</h2>
+    <div id="team-selection">
+      <div class="team-grid" id="team-grid">
+        <!-- Se llenará dinámicamente con JavaScript -->
+      </div>
+      <div class="buttons">
+        <button class="btn btn-secondary" id="edit-team-btn" onclick="toggleTeamEdit()" style="display:none;">✏️ Editar Equipo</button>
+        <button class="btn btn-primary" id="create-team-btn" onclick="createTeam()" style="display:none;">➕ Crear Equipo</button>
+        <button class="btn btn-success" id="heal-heroes-btn" onclick="healAllHeroes()" style="display:none;">💚 Curar Todos los Héroes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selección de Raid -->
+  <div class="section" id="raid-selection" {% if not team %}style="display:none;"{% endif %}>
+    <h2>⚔️ Selecciona una Raid</h2>
+    <div class="raid-grid">
+      {% for raid in available_raids %}
+        <div class="raid-card" data-raid-id="{{ raid.id }}">
+          <div class="raid-difficulty difficulty-{{ raid.difficulty }}">
+            {{ raid.get_difficulty_display }}
+          </div>
+          <div class="hero-name">{{ raid.name }}</div>
+          <div style="font-size: 12px; margin: 10px 0;">{{ raid.description }}</div>
+          <div style="font-size: 12px;">
+            👥 {{ raid.min_players }}-{{ raid.max_players }} jugadores
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="section" id="action-buttons" {% if not team %}style="display:none;"{% endif %}>
+    <h2>🚀 ¿Cómo quieres jugar?</h2>
+    <div class="buttons">
+      <button class="btn btn-primary" id="solo-btn" onclick="startSolo()" disabled>
+        🎯 Jugar Solo
+      </button>
+      <button class="btn btn-primary" id="matchmaking-btn" onclick="startMatchmaking()" disabled>
+        👥 Buscar Grupo
+      </button>
+    </div>
+  </div>
+
+  <div class="buttons" style="margin-top: 20px;">
+    <a href="{% url 'camp' %}" class="btn btn-secondary">🏠 Volver al Campamento</a>
+  </div>
+</div>
+
+<script>
+let selectedRaid = null;
+let selectedTeam = null;
+let currentTeam = null;
+let availableHeroes = [];
+let editMode = false;
+
+// Cargar datos iniciales
+document.addEventListener('DOMContentLoaded', function() {
+  loadTeamData();
+  setupRaidSelection();
+});
+
+async function loadTeamData() {
+  try {
+    const response = await fetch('/api/team/');
+    const data = await response.json();
+
+    if (data.ok) {
+      currentTeam = data.team;
+      availableHeroes = data.heroes || [];
+      selectedTeam = currentTeam ? currentTeam.id : null;
+      renderTeam();
+      updateButtons();
+    }
+  } catch (error) {
+    console.error('Error loading team data:', error);
+  }
+}
+
+function renderTeam() {
+  const teamGrid = document.getElementById('team-grid');
+  const editBtn = document.getElementById('edit-team-btn');
+  const createBtn = document.getElementById('create-team-btn');
+
+  teamGrid.innerHTML = '';
+
+  // Crear 4 slots siempre
+  for (let i = 0; i < 4; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'hero-card';
+    slot.dataset.position = i;
+
+    if (currentTeam && currentTeam.slots && currentTeam.slots[i]) {
+      const hero = currentTeam.slots[i];
+      const isDead = hero.hp <= 0;
+
+      slot.innerHTML = `
+        ${hero.image ? `<img src="${hero.image}" alt="${hero.name}">` : '<div style="width:60px;height:60px;background:#333;border-radius:50%;margin:0 auto 8px;"></div>'}
+        <div class="hero-name">${hero.name}</div>
+        <div class="hero-hp ${isDead ? 'dead' : ''}">HP: ${hero.hp}/${hero.max_hp}</div>
+      `;
+      slot.dataset.heroId = hero.id;
+
+      if (isDead) {
+        slot.classList.add('dead');
+      } else {
+        slot.classList.remove('dead');
+      }
+
+      if (editMode) {
+        slot.onclick = () => removeHeroFromSlot(i);
+        slot.style.cursor = 'pointer';
+        slot.title = 'Clic para quitar';
+      }
+    } else {
+      slot.classList.add('empty');
+      slot.innerHTML = '<div style="font-size: 24px; color: rgba(255,255,255,0.3);">+</div>';
+
+      if (editMode) {
+        slot.onclick = () => showHeroSelector(i);
+        slot.style.cursor = 'pointer';
+        slot.title = 'Clic para añadir héroe';
+      }
+    }
+
+    teamGrid.appendChild(slot);
+  }
+
+  // Mostrar botones apropiados
+  const healBtn = document.getElementById('heal-heroes-btn');
+
+  if (currentTeam && currentTeam.slots && currentTeam.slots.length > 0) {
+    editBtn.style.display = 'inline-block';
+    createBtn.style.display = 'none';
+    healBtn.style.display = 'inline-block';
+  } else {
+    editBtn.style.display = 'none';
+    createBtn.style.display = 'inline-block';
+    healBtn.style.display = 'none';
+  }
+}
+
+function setupRaidSelection() {
+  document.querySelectorAll('.raid-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.raid-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedRaid = parseInt(card.dataset.raidId);
+      updateButtons();
+    });
+  });
+}
+
+function updateButtons() {
+  const soloBtn = document.getElementById('solo-btn');
+  const matchmakingBtn = document.getElementById('matchmaking-btn');
+
+  const hasTeam = currentTeam && currentTeam.slots && currentTeam.slots.length > 0;
+  const canPlay = selectedRaid && hasTeam;
+
+  if (soloBtn) soloBtn.disabled = !canPlay;
+  if (matchmakingBtn) matchmakingBtn.disabled = !canPlay;
+}
+
+function toggleTeamEdit() {
+  editMode = !editMode;
+  const editBtn = document.getElementById('edit-team-btn');
+
+  if (editMode) {
+    editBtn.textContent = '💾 Guardar Cambios';
+    editBtn.className = 'btn btn-success';
+  } else {
+    editBtn.textContent = '✏️ Editar Equipo';
+    editBtn.className = 'btn btn-secondary';
+    saveTeamChanges();
+  }
+
+  renderTeam();
+}
+
+async function createTeam() {
+  try {
+    const response = await fetch('/api/team/create/', {
+      method: 'POST',
+      body: new FormData()
+    });
+
+    if (response.ok) {
+      await loadTeamData();
+      editMode = true;
+      renderTeam();
+    }
+  } catch (error) {
+    alert('Error creando equipo: ' + error.message);
+  }
+}
+
+async function removeHeroFromSlot(position) {
+  if (!currentTeam || !currentTeam.slots) return;
+
+  // Encontrar el héroe en esa posición y removerlo
+  const heroToRemove = currentTeam.slots[position];
+  if (heroToRemove) {
+    try {
+      const formData = new FormData();
+      formData.append('player_hero_id', heroToRemove.id);
+
+      await fetch('/api/team/remove/', {
+        method: 'POST',
+        body: formData
+      });
+
+      await loadTeamData();
+    } catch (error) {
+      alert('Error removiendo héroe: ' + error.message);
+    }
+  }
+}
+
+function showHeroSelector(position) {
+  // Crear modal simple para seleccionar héroe
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); z-index: 10000; display: flex;
+    align-items: center; justify-content: center; padding: 20px;
+  `;
+
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: #222; border: 2px solid #00ffcc; border-radius: 15px;
+    padding: 20px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
+  `;
+
+  content.innerHTML = `
+    <h3 style="color: #00ffcc; margin-top: 0;">Seleccionar Héroe</h3>
+    <div id="hero-selector-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;"></div>
+    <button onclick="this.closest('.modal-overlay').remove()" style="margin-top: 15px; padding: 8px 16px; background: #666; color: white; border: none; border-radius: 5px;">Cancelar</button>
+  `;
+
+  const grid = content.querySelector('#hero-selector-grid');
+
+  // Filtrar héroes ya usados
+  const usedHeroIds = currentTeam && currentTeam.slots ? currentTeam.slots.map(s => s.base_hero_id) : [];
+  const availableForSelection = availableHeroes.filter(h => !usedHeroIds.includes(h.base_hero_id));
+
+  availableForSelection.forEach(hero => {
+    const heroCard = document.createElement('div');
+    heroCard.style.cssText = `
+      border: 2px solid transparent; border-radius: 8px; padding: 8px;
+      text-align: center; cursor: pointer; transition: all 0.3s ease;
+      background: rgba(255,255,255,0.1);
+    `;
+
+    heroCard.innerHTML = `
+      ${hero.image ? `<img src="${hero.image}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">` : '<div style="width:50px;height:50px;background:#333;border-radius:50%;margin:0 auto;"></div>'}
+      <div style="font-size: 12px; margin-top: 5px; color: white;">${hero.name}</div>
+      <div style="font-size: 10px; color: #ff6b6b;">HP: ${hero.hp}/${hero.max_hp}</div>
+    `;
+
+    heroCard.onmouseover = () => heroCard.style.borderColor = '#00ffcc';
+    heroCard.onmouseout = () => heroCard.style.borderColor = 'transparent';
+    heroCard.onclick = () => addHeroToTeam(hero.id, position, modal);
+
+    grid.appendChild(heroCard);
+  });
+
+  modal.className = 'modal-overlay';
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+
+  // Cerrar al hacer clic fuera
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+}
+
+async function addHeroToTeam(heroId, position, modal) {
+  try {
+    const formData = new FormData();
+    formData.append('player_hero_id', heroId);
+
+    await fetch('/api/team/add/', {
+      method: 'POST',
+      body: formData
+    });
+
+    await loadTeamData();
+    modal.remove();
+  } catch (error) {
+    alert('Error añadiendo héroe: ' + error.message);
+  }
+}
+
+async function saveTeamChanges() {
+  // Los cambios se guardan automáticamente con cada acción
+  await loadTeamData();
+}
+
+function startSolo() {
+  if (!selectedRaid) {
+    alert('Selecciona una raid primero');
+    return;
+  }
+
+  if (!selectedTeam) {
+    alert('Necesitas un equipo para jugar');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('raid_id', selectedRaid);
+  formData.append('team_id', selectedTeam);
+
+  fetch('/api/raid/solo/start/', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.ok) {
+      window.location.href = `/raid/room/${data.room_id}/`;
+    } else {
+      alert('Error: ' + (data.error || 'Error desconocido'));
+    }
+  })
+  .catch(error => {
+    alert('Error de conexión: ' + error.message);
+  });
+}
+
+function startMatchmaking() {
+  if (!selectedRaid) {
+    alert('Selecciona una raid primero');
+    return;
+  }
+
+  if (!selectedTeam) {
+    alert('Necesitas un equipo para jugar');
+    return;
+  }
+
+  // Verificar que al menos un héroe esté vivo
+  if (currentTeam && currentTeam.slots) {
+    const aliveHeroes = currentTeam.slots.filter(hero => hero.hp > 0);
+    if (aliveHeroes.length === 0) {
+      alert('Todos tus héroes están muertos. Cúralos antes de participar en raids.');
+      return;
+    }
+  }
+
+  const formData = new FormData();
+  formData.append('raid_id', selectedRaid);
+  formData.append('team_id', selectedTeam);
+
+  fetch('/api/raid/matchmaking/join/', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.ok) {
+      // Redirigir a la sala de matchmaking
+      window.location.href = `/matchmaking/room/${data.room_id}/`;
+    } else {
+      alert('Error: ' + (data.error || 'Error desconocido'));
+    }
+  })
+  .catch(error => {
+    alert('Error de conexión: ' + error.message);
+  });
+}
+
+async function healAllHeroes() {
+  try {
+    const response = await fetch('/api/hero/heal/all/', {
+      method: 'POST'
+    });
+
+    const data = await response.json();
+    if (data.ok) {
+      alert(`✅ ${data.healed_count} héroes curados de ${data.total_heroes} total.`);
+      await loadTeamData(); // Recargar datos del equipo
+    } else {
+      alert('Error curando héroes: ' + (data.error || 'Error desconocido'));
+    }
+  } catch (error) {
+    alert('Error de conexión: ' + error.message);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Prado de las Ovejas",
+    "description": "Una raid sencilla para principiantes. Enfréntate a manadas de ovejas en dos oleadas.",
+    "image": null,
+    "difficulty": "easy",
+    "min_players": 1,
+    "max_players": 4
+  }
+]

@@ -1,0 +1,694 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>{% if room.raid %}{{ room.raid.name }}{% else %}Raid{% endif %} - RunRaids TCG</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap');
+
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      color: white;
+    }
+
+    .raid-container {
+      display: flex; flex-direction: column; height: 100vh;
+      padding: 10px; box-sizing: border-box;
+    }
+
+    .raid-header {
+      text-align: center; padding: 10px 0; border-bottom: 2px solid #00ffcc;
+      margin-bottom: 15px;
+    }
+
+    .raid-title {
+      font-size: 24px; font-weight: 700; color: #00ffcc;
+      text-shadow: 0 0 10px #00ffcc; margin: 0;
+    }
+
+    .raid-info {
+      font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 5px;
+    }
+
+    .enemies-section {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 200px; margin-bottom: 20px;
+    }
+
+    .enemies-grid {
+      display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+    }
+
+    .enemy-card {
+      background: rgba(255,0,0,0.1); border: 2px solid #ff4444;
+      border-radius: 15px; padding: 15px; text-align: center;
+      min-width: 150px; transition: all 0.3s ease;
+      cursor: pointer; position: relative; overflow: hidden;
+    }
+
+    .enemy-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(45deg, transparent 30%, rgba(255,68,68,0.2) 50%, transparent 70%);
+      transform: translateX(-100%); transition: transform 0.6s ease;
+    }
+
+    .enemy-card:hover::before {
+      transform: translateX(100%);
+    }
+
+    .enemy-card:hover {
+      border-color: #ff6666; background: rgba(255,0,0,0.2);
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 10px 30px rgba(255,68,68,0.4);
+    }
+
+    .enemy-card.dead {
+      opacity: 0.3; border-color: #666; background: rgba(100,100,100,0.1);
+      cursor: default; transform: none;
+      animation: death-fade 0.5s ease-out;
+    }
+
+    @keyframes death-fade {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0.3; transform: scale(0.95); }
+    }
+
+    .enemy-image {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: #333; margin: 0 auto 10px; display: flex;
+      align-items: center; justify-content: center; font-size: 32px;
+    }
+
+    .enemy-name {
+      font-weight: 600; margin-bottom: 8px; color: #ff6666;
+    }
+
+    .enemy-hp {
+      font-size: 14px; margin-bottom: 10px;
+    }
+
+    .hp-bar {
+      width: 100%; height: 8px; background: rgba(255,255,255,0.2);
+      border-radius: 4px; overflow: hidden; margin-bottom: 10px;
+      position: relative;
+    }
+
+    .hp-fill {
+      height: 100%; background: linear-gradient(90deg, #ff4444, #ff6666);
+      transition: width 0.5s ease;
+      position: relative;
+    }
+
+    .hp-fill::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: hp-shine 2s infinite;
+    }
+
+    @keyframes hp-shine {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .hp-bar.damage-flash {
+      animation: damage-flash 0.3s ease-out;
+    }
+
+    @keyframes damage-flash {
+      0% { background: rgba(255,0,0,0.5); }
+      100% { background: rgba(255,255,255,0.2); }
+    }
+
+    .attack-btn {
+      background: #ff4444; color: white; border: none; padding: 6px 12px;
+      border-radius: 5px; font-family: 'Orbitron', sans-serif; font-weight: 600;
+      cursor: pointer; transition: all 0.3s ease; font-size: 12px;
+      position: relative; overflow: hidden;
+    }
+
+    .attack-btn::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.4s ease;
+    }
+
+    .attack-btn:hover::before {
+      left: 100%;
+    }
+
+    .attack-btn:hover {
+      background: #ff6666; transform: scale(1.1);
+      box-shadow: 0 4px 15px rgba(255,68,68,0.5);
+    }
+
+    .attack-btn:active {
+      transform: scale(0.95);
+      transition: transform 0.1s ease;
+    }
+
+    .attack-btn:disabled {
+      background: #666; cursor: not-allowed; transform: none;
+      box-shadow: none;
+    }
+
+    .attack-btn:disabled::before {
+      display: none;
+    }
+
+    .players-section {
+      border-top: 2px solid #00ffcc; padding-top: 15px;
+    }
+
+    .players-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+    }
+
+    .player-card {
+      background: rgba(0,255,204,0.1); border: 2px solid #00ffcc;
+      border-radius: 15px; padding: 15px;
+      transition: all 0.3s ease; position: relative; overflow: hidden;
+    }
+
+    .player-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(0,255,204,0.1) 50%, transparent 100%);
+      transform: scale(0); transition: transform 0.4s ease;
+      border-radius: 15px;
+    }
+
+    .player-card:hover::before {
+      transform: scale(1);
+    }
+
+    .player-card:hover {
+      border-color: #00e6b8; transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,255,204,0.3);
+    }
+
+    /* Colores de jugadores */
+    .player-card.player-color-1 { border-color: #00ffcc; background: rgba(0,255,204,0.1); }
+    .player-card.player-color-2 { border-color: #ff6b6b; background: rgba(255,107,107,0.1); }
+    .player-card.player-color-3 { border-color: #4ecdc4; background: rgba(78,205,196,0.1); }
+    .player-card.player-color-4 { border-color: #ffe66d; background: rgba(255,230,109,0.1); }
+
+    .player-name {
+      font-weight: 600; color: #00ffcc; margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .player-heroes {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+
+    .hero-card {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px; padding: 8px; text-align: center; aspect-ratio: 3/4;
+      display: flex; flex-direction: column; justify-content: space-between;
+      transition: all 0.3s ease; position: relative;
+    }
+
+    .hero-card.dead {
+      opacity: 0.3; border-color: #666;
+    }
+
+    .hero-card.active-turn {
+      border-width: 3px; border-color: #ffff00;
+      background: rgba(255,255,0,0.2);
+      animation: active-hero-pulse 1.5s infinite alternate;
+      transform: scale(1.05);
+      z-index: 10;
+    }
+
+    @keyframes active-hero-pulse {
+      from {
+        box-shadow: 0 0 15px rgba(255,255,0,0.6);
+        transform: scale(1.05) translateY(0);
+      }
+      to {
+        box-shadow: 0 0 25px rgba(255,255,0,0.9);
+        transform: scale(1.05) translateY(-3px);
+      }
+    }
+
+    .hero-card.active-turn::before {
+      content: '⚡'; position: absolute; top: -5px; right: -5px;
+      background: #ffff00; color: #000; border-radius: 50%;
+      width: 20px; height: 20px; display: flex; align-items: center;
+      justify-content: center; font-size: 12px; font-weight: bold;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .hero-image {
+      width: 40px; height: 40px; border-radius: 50%; background: #333;
+      margin: 0 auto 5px; object-fit: cover;
+    }
+
+    .hero-name {
+      font-size: 10px; font-weight: 600; margin-bottom: 3px;
+    }
+
+    .hero-hp {
+      font-size: 9px; color: #ff6b6b;
+    }
+
+    .turn-indicator {
+      position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8);
+      padding: 8px 12px; border-radius: 8px; border: 1px solid #00ffcc;
+      font-size: 12px; z-index: 1000;
+    }
+
+    .logs-panel {
+      position: fixed; bottom: 10px; right: 10px; width: 300px; height: 150px;
+      background: rgba(0,0,0,0.9); border: 1px solid #00ffcc; border-radius: 8px;
+      padding: 10px; overflow-y: auto; font-size: 10px; z-index: 1000;
+    }
+
+    .log-entry {
+      margin-bottom: 3px; color: #0f0;
+    }
+
+    .back-btn {
+      position: fixed; top: 10px; right: 10px; background: #666;
+      color: white; border: none; padding: 8px 12px; border-radius: 5px;
+      font-family: 'Orbitron', sans-serif; cursor: pointer; z-index: 1000;
+    }
+
+    .back-btn:hover {
+      background: #777;
+    }
+
+    /* Efectos de partículas */
+    .damage-particles {
+      position: absolute; pointer-events: none; z-index: 1000;
+    }
+
+    .particle {
+      position: absolute; width: 4px; height: 4px; background: #ff4444;
+      border-radius: 50%; animation: particle-explosion 0.8s ease-out forwards;
+    }
+
+    @keyframes particle-explosion {
+      0% { opacity: 1; transform: scale(1) translate(0, 0); }
+      100% { opacity: 0; transform: scale(0) translate(var(--dx), var(--dy)); }
+    }
+
+    .floating-damage {
+      position: absolute; color: #ff4444; font-weight: bold; font-size: 18px;
+      pointer-events: none; z-index: 1001; animation: float-damage 1s ease-out forwards;
+    }
+
+    @keyframes float-damage {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+    }
+
+    .screen-shake {
+      animation: screen-shake 0.3s ease-in-out;
+    }
+
+    @keyframes screen-shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+    }
+
+    @media (min-width: 768px) and (max-width: 1024px) {
+      /* iPad styles */
+      .enemy-card { min-width: 180px; padding: 20px; }
+      .enemy-image { width: 100px; height: 100px; font-size: 40px; }
+      .enemy-name { font-size: 18px; }
+      .enemy-hp { font-size: 16px; }
+      .attack-btn { padding: 10px 16px; font-size: 14px; }
+
+      .player-card { padding: 20px; }
+      .player-name { font-size: 18px; margin-bottom: 15px; }
+      .player-heroes { gap: 12px; }
+      .hero-card { padding: 12px; }
+      .hero-image { width: 60px; height: 60px; }
+      .hero-name { font-size: 14px; }
+      .hero-hp { font-size: 12px; }
+
+      .turn-indicator { font-size: 16px; padding: 12px 16px; }
+      .logs-panel { width: 350px; height: 180px; font-size: 12px; }
+    }
+
+    @media (max-width: 768px) {
+      .raid-container { padding: 5px; }
+      .enemies-grid { gap: 10px; }
+      .enemy-card { min-width: 120px; padding: 10px; }
+      .enemy-image { width: 60px; height: 60px; }
+      .players-grid { grid-template-columns: 1fr; }
+      .logs-panel { width: 250px; height: 120px; bottom: 5px; right: 5px; }
+    }
+  </style>
+</head>
+<body>
+  {% if error %}
+    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center;">
+      <div>
+        <h2 style="color: #ff4444;">{{ error }}</h2>
+        <a href="{% url 'matchmaking' %}" class="btn" style="background: #00ffcc; color: #000; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Volver al Matchmaking</a>
+      </div>
+    </div>
+  {% else %}
+    <div class="raid-container">
+      <!-- Header -->
+      <div class="raid-header">
+        <h1 class="raid-title" id="raid-title">{{ room.name }}</h1>
+        <div class="raid-info" id="raid-info">Cargando...</div>
+      </div>
+
+      <!-- Enemigos -->
+      <div class="enemies-section">
+        <div class="enemies-grid" id="enemies-grid">
+          <!-- Se llenará dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Jugadores -->
+      <div class="players-section">
+        <div class="players-grid" id="players-grid">
+          <!-- Se llenará dinámicamente -->
+        </div>
+      </div>
+    </div>
+
+    <!-- UI Elements -->
+    <div class="turn-indicator" id="turn-indicator">
+      Esperando...
+    </div>
+
+    <div class="logs-panel" id="logs-panel">
+      <div id="logs-content"></div>
+    </div>
+
+    <button class="back-btn" onclick="goBack()">🏠 Salir</button>
+  {% endif %}
+
+  <script>
+    const ROOM_ID = {{ room.id|default:'null' }};
+    const MEMBER_ID = {{ request.session.member_id|default:'null' }};
+    let pollInterval = null;
+    let lastState = null;
+
+    function goBack() {
+      if (confirm('¿Seguro que quieres salir de la raid?')) {
+        window.location.href = '{% url "matchmaking" %}';
+      }
+    }
+
+    async function pollRaidState() {
+      if (!ROOM_ID) return;
+      
+      try {
+        const response = await fetch(`/api/raid/state/${ROOM_ID}/`);
+        const data = await response.json();
+        
+        if (data.ok) {
+          updateRaidUI(data.state);
+          lastState = data.state;
+        }
+      } catch (error) {
+        console.error('Error polling raid state:', error);
+      }
+    }
+
+    function updateRaidUI(state) {
+      updateRaidInfo(state);
+      updateEnemies(state);
+      updatePlayers(state);
+      updateTurnIndicator(state);
+      updateLogs(state);
+    }
+
+    function updateRaidInfo(state) {
+      const raidInfo = document.getElementById('raid-info');
+      let info = `Estado: ${state.state}`;
+      
+      if (state.raid) {
+        info += ` | ${state.raid.difficulty} | Oleada ${state.raid.current_wave || 1}/${state.raid.total_waves}`;
+        if (state.raid.wave_name) {
+          info += ` - ${state.raid.wave_name}`;
+        }
+      }
+      
+      raidInfo.textContent = info;
+    }
+
+    function updateEnemies(state) {
+      const enemiesGrid = document.getElementById('enemies-grid');
+      const oldEnemies = {};
+
+      // Guardar estado anterior para detectar cambios
+      Array.from(enemiesGrid.children).forEach(card => {
+        const enemyId = card.dataset.enemyId;
+        if (enemyId) {
+          const hpBar = card.querySelector('.hp-fill');
+          oldEnemies[enemyId] = {
+            hp: parseInt(card.querySelector('.enemy-hp').textContent.split('/')[0]),
+            alive: !card.classList.contains('dead')
+          };
+        }
+      });
+
+      enemiesGrid.innerHTML = '';
+
+      state.enemies.forEach(enemy => {
+        const enemyCard = document.createElement('div');
+        enemyCard.className = `enemy-card ${enemy.alive ? '' : 'dead'}`;
+        enemyCard.dataset.enemyId = enemy.id;
+
+        const hpPercent = enemy.max_hp > 0 ? (enemy.hp / enemy.max_hp) * 100 : 0;
+        const oldEnemy = oldEnemies[enemy.id];
+
+        enemyCard.innerHTML = `
+          <div class="enemy-image">
+            ${enemy.image ? `<img src="${enemy.image}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : '👹'}
+          </div>
+          <div class="enemy-name">${enemy.name}</div>
+          <div class="enemy-hp">${enemy.hp}/${enemy.max_hp} HP</div>
+          <div class="hp-bar ${oldEnemy && oldEnemy.hp > enemy.hp ? 'damage-flash' : ''}">
+            <div class="hp-fill" style="width: ${hpPercent}%"></div>
+          </div>
+          ${canAttackEnemy(state, enemy) ? `<button class="attack-btn" onclick="attackEnemy(${enemy.id})">⚔️ Atacar</button>` : ''}
+        `;
+
+        // Animación de entrada para nuevos enemigos
+        if (!oldEnemy) {
+          enemyCard.style.opacity = '0';
+          enemyCard.style.transform = 'scale(0.8)';
+          setTimeout(() => {
+            enemyCard.style.transition = 'all 0.5s ease';
+            enemyCard.style.opacity = '1';
+            enemyCard.style.transform = 'scale(1)';
+          }, 100);
+        }
+
+        // Efecto de muerte
+        if (oldEnemy && oldEnemy.alive && !enemy.alive) {
+          setTimeout(() => {
+            enemyCard.style.animation = 'death-fade 0.5s ease-out';
+          }, 100);
+        }
+
+        enemiesGrid.appendChild(enemyCard);
+      });
+    }
+
+    function updatePlayers(state) {
+      const playersGrid = document.getElementById('players-grid');
+      playersGrid.innerHTML = '';
+
+      state.participants.forEach(participant => {
+        const playerCard = document.createElement('div');
+        playerCard.className = `player-card player-color-${participant.player_color}`;
+
+        let heroesHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const hero = participant.team_heroes[i];
+          if (hero) {
+            const hpPercent = hero.max_hp > 0 ? (hero.current_hp / hero.max_hp) * 100 : 0;
+
+            // Verificar si este héroe tiene el turno activo
+            const isActiveTurn = state.turn &&
+                                state.turn.actor_type === 'hero' &&
+                                state.turn.hero_id === hero.id;
+
+            heroesHTML += `
+              <div class="hero-card ${hero.is_alive ? '' : 'dead'} ${isActiveTurn ? 'active-turn' : ''}" data-hero-id="${hero.id}">
+                ${hero.image ? `<img src="${hero.image}" class="hero-image">` : '<div class="hero-image">🦸</div>'}
+                <div class="hero-name">${hero.name}</div>
+                <div class="hero-hp">${hero.current_hp}/${hero.max_hp}</div>
+              </div>
+            `;
+          } else {
+            heroesHTML += '<div class="hero-card" style="opacity:0.3;border:1px dashed #666;"></div>';
+          }
+        }
+
+        playerCard.innerHTML = `
+          <div class="player-name">${participant.member_name} ${participant.is_alive ? '💚' : '💀'}</div>
+          <div class="player-heroes">${heroesHTML}</div>
+        `;
+
+        playersGrid.appendChild(playerCard);
+      });
+    }
+
+    function updateTurnIndicator(state) {
+      const turnIndicator = document.getElementById('turn-indicator');
+
+      if (state.turn) {
+        const isMyTurn = state.turn.actor_type === 'hero' && state.turn.member_id === MEMBER_ID;
+        let turnText = `Turno ${state.turn.index + 1}`;
+        let actorText = '';
+
+        if (state.turn.actor_type === 'hero') {
+          if (isMyTurn) {
+            actorText = `🎯 Tu turno - ${state.turn.hero_name || 'Héroe'}`;
+            if (state.turn.hero_speed) {
+              actorText += ` (Vel: ${state.turn.hero_speed})`;
+            }
+          } else {
+            actorText = `👤 ${state.turn.hero_name || 'Héroe enemigo'}`;
+            if (state.turn.hero_speed) {
+              actorText += ` (Vel: ${state.turn.hero_speed})`;
+            }
+          }
+        } else {
+          actorText = '👹 Turno del enemigo';
+        }
+
+        turnIndicator.innerHTML = `
+          <div>${turnText}</div>
+          <div style="color: ${isMyTurn ? '#00ff00' : '#ffff00'}; font-size: 12px;">
+            ${actorText}
+          </div>
+        `;
+      } else {
+        turnIndicator.textContent = 'Esperando...';
+      }
+    }
+
+    function updateLogs(state) {
+      const logsContent = document.getElementById('logs-content');
+      logsContent.innerHTML = state.logs.map(log => 
+        `<div class="log-entry">[${new Date(log.ts).toLocaleTimeString()}] ${log.action} ${log.actor ? `(${log.actor})` : ''}</div>`
+      ).join('');
+      logsContent.scrollTop = logsContent.scrollHeight;
+    }
+
+    function canAttackEnemy(state, enemy) {
+      return enemy.alive && 
+             state.turn && 
+             state.turn.actor_type === 'hero' && 
+             state.turn.member_id === MEMBER_ID;
+    }
+
+    function createDamageEffect(element, damage) {
+      // Crear partículas de daño
+      const particles = document.createElement('div');
+      particles.className = 'damage-particles';
+      element.appendChild(particles);
+
+      for (let i = 0; i < 8; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const angle = (i / 8) * Math.PI * 2;
+        const distance = 30 + Math.random() * 20;
+        particle.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
+        particle.style.setProperty('--dy', Math.sin(angle) * distance + 'px');
+        particles.appendChild(particle);
+      }
+
+      // Crear texto de daño flotante
+      const damageText = document.createElement('div');
+      damageText.className = 'floating-damage';
+      damageText.textContent = `-${damage}`;
+      damageText.style.left = '50%';
+      damageText.style.top = '30%';
+      damageText.style.transform = 'translateX(-50%)';
+      element.appendChild(damageText);
+
+      // Limpiar después de la animación
+      setTimeout(() => {
+        particles.remove();
+        damageText.remove();
+      }, 1000);
+
+      // Efecto de sacudida de pantalla
+      document.body.classList.add('screen-shake');
+      setTimeout(() => {
+        document.body.classList.remove('screen-shake');
+      }, 300);
+    }
+
+    function createHealEffect(element, heal) {
+      const healText = document.createElement('div');
+      healText.className = 'floating-damage';
+      healText.style.color = '#4CAF50';
+      healText.textContent = `+${heal}`;
+      healText.style.left = '50%';
+      healText.style.top = '30%';
+      healText.style.transform = 'translateX(-50%)';
+      element.appendChild(healText);
+
+      setTimeout(() => {
+        healText.remove();
+      }, 1000);
+    }
+
+    async function attackEnemy(enemyId) {
+      try {
+        const formData = new FormData();
+        formData.append('room_id', ROOM_ID);
+        formData.append('target_enemy_id', enemyId);
+
+        // Efecto visual inmediato
+        const enemyCard = document.querySelector(`[data-enemy-id="${enemyId}"]`);
+        if (enemyCard) {
+          enemyCard.style.animation = 'none';
+          enemyCard.offsetHeight; // Trigger reflow
+          enemyCard.style.animation = 'screen-shake 0.3s ease-in-out';
+        }
+
+        const response = await fetch('/api/raid/decision/', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!data.ok) {
+          alert('Error: ' + (data.error || 'Error desconocido'));
+        }
+      } catch (error) {
+        alert('Error de conexión: ' + error.message);
+      }
+    }
+
+    // Inicializar
+    if (ROOM_ID) {
+      pollRaidState();
+      pollInterval = setInterval(pollRaidState, 1000);
+    }
+
+    // Limpiar al salir
+    window.addEventListener('beforeunload', () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    });
+  </script>
+</body>
+</html>

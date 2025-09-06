@@ -16,7 +16,15 @@ from core.models import (
     AllianceSettings,
     AllianceBuilding,
     Friendship,
-    HeroSkill
+    Banner,
+    BannerEntry,
+    BannerReward,
+    BannerRewardItem,
+    Raid,
+    RaidWave,
+    RaidEnemy,
+    RaidRoom,
+    Team,
 )
 
 
@@ -117,3 +125,64 @@ class AllianceBuildingAdmin(admin.ModelAdmin):
 class FriendshipAdmin(admin.ModelAdmin):
     list_display = ("member_a", "member_b", "created_at")
     search_fields = ("member_a__name", "member_b__name")
+
+
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ("name", "starts_at", "is_active")
+
+
+@admin.register(BannerEntry)
+class BannerEntryAdmin(admin.ModelAdmin):
+    list_display = ("banner", "hero", "is_promotional")
+
+
+@admin.register(BannerReward)
+class BannerRewardAdmin(admin.ModelAdmin):
+    list_display = ("banner", "name")
+
+
+@admin.register(BannerRewardItem)
+class BannerRewardItemAdmin(admin.ModelAdmin):
+    list_display = ("reward", "resource_type", "min_amount", "max_amount")
+
+
+# ====== RAIDS ======
+@admin.register(Raid)
+class RaidAdmin(admin.ModelAdmin):
+    list_display = ("name", "difficulty", "min_players", "max_players", "created_at")
+    list_filter = ("difficulty",)
+    search_fields = ("name",)
+
+
+class RaidEnemyInline(admin.TabularInline):
+    model = RaidEnemy
+    extra = 1
+
+
+@admin.register(RaidWave)
+class RaidWaveAdmin(admin.ModelAdmin):
+    list_display = ("raid", "wave_number", "name")
+    list_filter = ("raid",)
+    ordering = ("raid", "wave_number")
+    inlines = [RaidEnemyInline]
+
+
+@admin.register(RaidEnemy)
+class RaidEnemyAdmin(admin.ModelAdmin):
+    list_display = ("wave", "enemy", "quantity", "level_modifier")
+    list_filter = ("wave__raid", "enemy")
+
+
+@admin.register(RaidRoom)
+class RaidRoomAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "raid", "owner", "state", "max_players", "created_at")
+    list_filter = ("state", "raid")
+    search_fields = ("name", "owner__name")
+
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ("id", "owner", "name", "is_active", "created_at")
+    list_filter = ("is_active",)
+    search_fields = ("owner__name", "name")

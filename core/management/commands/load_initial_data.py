@@ -8,7 +8,8 @@ from django.db import models
 try:
     from core.models import (
         ResourceType, BuildingType, Rarity, Skill, SkillSlot, Hero, Enemy, Member,
-        PlayerResource, PlayerHero, BuildingLevelCost, PlayerBuilding, HeroSkill
+        PlayerResource, PlayerHero, BuildingLevelCost, PlayerBuilding, HeroSkill,
+        Raid, RaidWave, RaidEnemy
     )
     from django.contrib.auth.models import User
 
@@ -66,6 +67,9 @@ class Command(BaseCommand):
                 'heroes.json': 'heroes',
                 'enemies.json': 'enemies',
                 'building_costs.json': 'building_costs',
+                'raids.json': 'raids',
+                'raid_waves.json': 'raid_waves',
+                'raid_enemies.json': 'raid_enemies',
             }
             for filename, key in mapping.items():
                 path = os.path.join(data_dir, filename)
@@ -261,6 +265,55 @@ class Command(BaseCommand):
             )
             if created:
                 self.stdout.write(f'Created enemy: {enemy.name}')
+
+        # Load Raids
+        self.stdout.write('Loading raids...')
+        for raid_data in data.get('raids', []):
+            raid_data.pop('pk', None)
+            raid, created = Raid.objects.get_or_create(
+                name=raid_data['name'],
+                defaults={
+                    'description': raid_data.get('description', ''),
+                    'difficulty': raid_data.get('difficulty', 'normal'),
+                    'min_players': raid_data.get('min_players', 1),
+                    'max_players': raid_data.get('max_players', 4),
+                }
+            )
+            if created:
+                self.stdout.write(f'Created raid: {raid.name}')
+
+        # Load Raid Waves
+        self.stdout.write('Loading raid waves...')
+        for wave_data in data.get('raid_waves', []):
+            raid = Raid.objects.get(name=wave_data['raid'])
+            wave, created = RaidWave.objects.get_or_create(
+                raid=raid,
+                wave_number=wave_data['wave_number'],
+                defaults={
+                    'name': wave_data.get('name', f'Oleada {wave_data["wave_number"]}')
+                }
+            )
+            if created:
+                self.stdout.write(f'Created wave: {wave.raid.name} - {wave.name}')
+
+        # Load Raid Enemies
+        self.stdout.write('Loading raid enemies...')
+        for enemy_data in data.get('raid_enemies', []):
+            wave_info = enemy_data['wave']
+            raid = Raid.objects.get(name=wave_info['raid'])
+            wave = RaidWave.objects.get(raid=raid, wave_number=wave_info['wave_number'])
+            enemy = Enemy.objects.get(name=enemy_data['enemy'])
+
+            raid_enemy, created = RaidEnemy.objects.get_or_create(
+                wave=wave,
+                enemy=enemy,
+                defaults={
+                    'quantity': enemy_data.get('quantity', 1),
+                    'level_modifier': enemy_data.get('level_modifier', 1.0)
+                }
+            )
+            if created:
+                self.stdout.write(f'Created raid enemy: {wave} - {enemy_data["quantity"]}x {enemy.name}')
 
         # Load Test Users
         self.stdout.write('Loading test users...')

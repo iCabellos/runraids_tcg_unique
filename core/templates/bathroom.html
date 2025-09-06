@@ -1,0 +1,489 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Invocaciones — Baño Invocador</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+    :root{
+      --txt: #e7f1ff;
+      --muted: rgba(255,255,255,.7);
+      --glass: rgba(0,0,0,.35);
+      --panel: rgba(13,18,30,.65);
+      --accent: #8fd6ff;
+
+      --rar-common:    #e6e9ef;
+      --rar-rare:      #6ab1ff;
+      --rar-epic:      #b574ff;
+      --rar-legendary: #ffcf6a;
+
+      --ok: #42f59b;
+      --err: #ff6b6b;
+    }
+
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--txt);
+      background: url('{% static "img/el_vater_invocador.png" %}') no-repeat center center fixed;
+      background-size: cover;
+      overflow: hidden; /* gestionamos scroll dentro del carrusel */
+    }
+
+
+
+  /* 🔹 Barra de recursos a la izquierda en horizontal */
+  .resource-bar {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 1000;
+    padding: 8px 10px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 10px;
+    backdrop-filter: blur(2px);
+  }
+
+  .resource-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 90px;
+  }
+
+  .resource-item img {
+    width: 28px; height: 28px; object-fit: contain; display: block;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.5));
+  }
+
+  .resource-amount {
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    text-shadow: 0 2px 3px rgba(0,0,0,.8), 0 0 3px rgba(0,0,0,.8);
+  }
+
+  .resource-name {
+    color: rgba(255,255,255,.8);
+    font-size: 12px;
+  }
+
+  @media (max-width: 520px) {
+    .resource-bar { gap: 8px; padding: 6px 8px; }
+    .resource-item { min-width: 70px; }
+    .resource-item img { width: 24px; height: 24px; }
+    .resource-amount { font-size: 14px; }
+    .resource-name { display:none; } /* ahorrar espacio en móvil */
+  }
+
+    .top-uid {
+      position: fixed; top: 6px; right: 10px; z-index: 9999;
+      font-size: 11px; letter-spacing: .5px; color: var(--muted);
+      background: var(--glass); padding: 3px 6px; border-radius: 6px;
+      user-select: text;
+    }
+
+    .wrap {
+      position: relative;
+      height: 100%;
+      padding: 72px 14px 18px;
+      max-width: 1200px; margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    .headline {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; padding: 12px 16px; margin-bottom: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px; backdrop-filter: blur(6px);
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+    }
+    .headline .title { font-size: clamp(18px, 3vw, 28px); letter-spacing: 1px; }
+
+    /* ===== Carrusel banners ===== */
+    .carousel {
+      position: relative; height: calc(100% - 90px);
+    }
+    .slides {
+      display:flex; height:100%; width:100%; transition: transform .45s ease;
+    }
+    .banner-card {
+      flex: 0 0 100%;
+      display:grid; grid-template-columns: 1.6fr .9fr;
+      gap:16px; padding:14px; box-sizing: border-box;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px; overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+    @media (max-width: 980px){
+      .banner-card { grid-template-columns: 1fr; overflow-y:auto; }
+    }
+
+    .banner-visual {
+      position: relative; min-height: 280px; border-radius: 14px; overflow: hidden;
+      background:
+        radial-gradient(120% 140% at 0% -20%, rgba(255,255,255,.07), transparent 60%),
+        radial-gradient(120% 140% at 100% 120%, rgba(255,255,255,.04), transparent 60%),
+        rgba(17,22,36,.55);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .banner-visual img.cover { width:100%; height:100%; object-fit:cover; opacity:.9; filter:saturate(1.08) contrast(1.04); }
+
+    /* Reveal animation */
+    .reveal-overlay {
+      position:absolute; inset:0; pointer-events:none; opacity:0;
+      transition: opacity .35s ease; mix-blend-mode: screen;
+    }
+    .reveal-common    { background: rgba(230,233,239,.25); }
+    .reveal-rare      { background: rgba(106,177,255,.25); }
+    .reveal-epic      { background: rgba(181,116,255,.28); }
+    .reveal-legendary { background: rgba(255,207,106,.30); }
+    .reveal-reward    { background: rgba(255,255,255,.10); }
+
+    .banner-visual.anim-flush .reveal-overlay { opacity: 1; }
+    .banner-visual.anim-flush { animation: camout .7s cubic-bezier(.2,.8,.2,1); }
+    @keyframes camout { 0%{transform:scale(1)} 60%{transform:scale(.97)} 100%{transform:scale(1)} }
+
+    .rates {
+      position:absolute; top: 10px; right: 10px; z-index:2;
+      display:flex; gap:8px; align-items:center;
+      background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12);
+      padding:8px 10px; border-radius:12px; font-size:12px;
+    }
+    .rates .pill { padding:2px 6px; border-radius:999px; background:rgba(255,255,255,.08); }
+    .rates .help { width:18px; height:18px; display:grid; place-items:center; border-radius:50%;
+                   background:rgba(255,255,255,.12); font-weight:900; cursor:pointer; }
+
+    .tooltip { position:absolute; top: 38px; right:10px; min-width:260px; max-width:360px;
+               background: rgba(10,14,24,.96); border:1px solid rgba(255,255,255,.12);
+               border-radius:12px; padding:12px 14px; display:none; z-index:3; }
+    .tooltip.show { display:block; }
+    .tooltip h4 { margin:0 0 6px; font-size:14px; color:var(--accent); }
+    .tooltip ul { margin:6px 0 0 18px; font-size:13px; line-height:1.5; }
+
+    .cost { position:absolute; left:10px; bottom:10px; display:flex; gap:8px; align-items:center;
+            background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12);
+            padding:6px 10px; border-radius:10px; font-size:12px; }
+    .cost img { width:20px; height:20px; object-fit:contain; }
+
+    /* Panel héroes */
+    .heroes { display:grid; gap:12px; }
+    .heroes h3 { margin:0; font-size:16px; letter-spacing:.6px; color:var(--accent); text-shadow:0 0 10px rgba(143,214,255,.3); }
+    .hero-strip { display:grid; gap:10px; grid-auto-flow: column; overflow-x:auto; padding-bottom:4px; }
+    .hero-card { position:relative; width:140px; aspect-ratio:3/4; border-radius:14px; overflow:hidden;
+                 box-shadow:0 10px 20px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.05);
+                 background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+                 animation: idle 4.5s ease-in-out infinite; }
+    @keyframes idle { 50%{ transform: translateY(-4px) } }
+    .hero-img, .hero-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .hero-info { position:absolute; left:0; right:0; bottom:0; padding:6px 8px;
+                 background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(7,9,14,.85) 55%, rgba(7,9,14,.95) 100%);
+                 font-size:12px; }
+    .hero-info .name { font-weight:800; }
+    .rarity-ring { position:absolute; inset:-2px; border-radius:16px; pointer-events:none; border:2px solid rgba(255,255,255,.08);
+                   box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 0 20px rgba(0,0,0,.6); }
+    .rarity-ring::before, .rarity-ring::after { content:""; position:absolute; inset:-3px; border-radius:18px;
+                   background: conic-gradient(from 0deg, rgba(255,255,255,.0), rgba(255,255,255,.25), rgba(255,255,255,0) 25%);
+                   mix-blend-mode: screen; opacity:.45; animation: rays 2.8s linear infinite; }
+    .rarity-ring::after { animation-duration:3.6s; animation-direction:reverse; opacity:.35; }
+    @keyframes rays { to { transform: rotate(360deg) } }
+    .rar-common{border-color:var(--rar-common)} .rar-rare{border-color:var(--rar-rare)}
+    .rar-epic{border-color:var(--rar-epic)} .rar-legendary{border-color:var(--rar-legendary)}
+
+    /* Recompensas + acciones */
+    .banner-bottom { grid-column: span 2; padding-top:6px; }
+    .rewards { background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+               border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px; }
+    .rewards h4 { margin:0 0 10px; font-size:14px; color:var(--accent); }
+    .reward-row { display:flex; gap:14px; flex-wrap:wrap; }
+    .reward-badge { background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12);
+                    border-radius:10px; padding:6px 10px; font-size:12px; }
+
+    .actions { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
+    .btn { appearance:none; border:1px solid rgba(255,255,255,.16); background:linear-gradient(180deg,#1a2640,#0f1628);
+           color:#eaf3ff; padding:10px 14px; border-radius:12px; font-weight:700; letter-spacing:.3px; cursor:pointer;
+           box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06); }
+    .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+    .btn-primary { border-color: rgba(143,214,255,.4); box-shadow:0 10px 30px rgba(143,214,255,.15), inset 0 0 0 1px rgba(143,214,255,.25); }
+
+    /* Flechas carrusel */
+    .nav { position:absolute; top:50%; transform:translateY(-50%); width:42px; height:42px; border-radius:50%;
+           background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.14);
+           display:grid; place-items:center; cursor:pointer; z-index:5; }
+    .nav:hover{ background:rgba(0,0,0,.6); }
+    .nav.prev{ left: -4px; } .nav.next{ right: -4px; }
+    .nav svg { width:22px; height:22px; }
+
+    /* Toasts */
+    .toast-wrap { position: fixed; left:50%; top:16px; transform: translateX(-50%); z-index:10000; }
+    .toast { min-width: 240px; max-width: 90vw; margin:auto; background:rgba(20,20,28,.95);
+             border:1px solid rgba(255,255,255,.12); color:var(--txt); padding:10px 14px; border-radius:12px;
+             box-shadow:0 20px 50px rgba(0,0,0,.5); display:none; }
+    .toast.show{ display:block; }
+    .toast.err{ border-color: color-mix(in oklab, var(--err) 60%, white 40%); }
+  </style>
+</head>
+<body>
+
+<div class="top-uid">UID: {{ member.id }}</div>
+<div class="resource-bar">
+    {% for res in resources %}
+    <div class="resource-item">
+      {% if res.image %}
+        <img src="{{ res.image }}" alt="{{ res.name }}">
+      {% else %}
+        <img src="{% static 'img/resource_placeholder.png' %}" alt="{{ res.name }}">
+      {% endif %}
+      <div>
+        <div class="resource-amount">{{ res.amount }}</div>
+        <div class="resource-name">{{ res.name }}</div>
+      </div>
+    </div>
+    {% endfor %}
+</div>
+<div class="wrap">
+  <div class="headline">
+    <div class="title">Baño Invocador · Banners disponibles</div>
+  </div>
+
+  <div class="carousel" id="carousel" data-count="{{ banners|length }}">
+    <div class="nav prev" id="navPrev" style="{% if banners|length <= 1 %}display:none{% endif %}">
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 4.5L7.5 12l8 7.5"/></svg>
+    </div>
+    <div class="nav next" id="navNext" style="{% if banners|length <= 1 %}display:none{% endif %}">
+      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.5 4.5L16.5 12l-8 7.5"/></svg>
+    </div>
+
+    <div class="slides" id="slides">
+      {% for b in banners %}
+      <article class="banner-card" data-banner-id="{{ b.id }}">
+        <div class="banner-visual" id="visual-{{ b.id }}">
+          {% if b.image %}
+            <img class="cover" src="{{ b.image }}" alt="{{ b.name }}">
+          {% endif %}
+          <div class="reveal-overlay" id="overlay-{{ b.id }}"></div>
+
+          {# ── Probabilidades: en columna para que no se corten en móvil ── #}
+          <div class="rates"
+               style="display:grid; grid-auto-flow:row; gap:6px; align-items:start; padding:10px;">
+            <div class="pill" style="font-weight:700; opacity:.9;">Probabilidades</div>
+            <div class="pill">Promo: {{ b.rates.promo_rate|floatformat:2 }}</div>
+            <div class="pill">Normal: {{ b.rates.normal_rate|floatformat:2 }}</div>
+            <div class="pill">Otros: {{ b.rates.other_rate|floatformat:2 }}</div>
+            <span class="help" style="margin-top:2px; justify-self:end;" onclick="toggleTip({{ b.id }})">?</span>
+          </div>
+
+          <div id="tip-{{ b.id }}" class="tooltip">
+            <h4>{{ b.name }}</h4>
+            <div><strong>Probabilidades</strong></div>
+            <ul>
+              <li>Héroe promocional total: {{ b.rates.promo_rate|floatformat:2 }}</li>
+              <li>Héroe no promocional total: {{ b.rates.normal_rate|floatformat:2 }}</li>
+              <li>Recompensas (resto): {{ b.rates.other_rate|floatformat:2 }}</li>
+            </ul>
+            {% if b.rewards %}
+              <div style="margin-top:8px;"><strong>Recompensas posibles</strong></div>
+              <ul>
+                {% for rw in b.rewards %}
+                  <li>
+                    {{ rw.name }}:
+                    {% for it in rw.items %}
+                      {{ it.resource_name }} ({{ it.min }}–{{ it.max }}){% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+
+          {# ── Coste: icono + cantidad en dos líneas, siempre visible ── #}
+          <div class="cost"
+               title="Saldo: {{ b.cost.balance }} {{ b.cost.resource_name }}"
+               style="display:flex; gap:8px; align-items:center; padding:8px 10px;">
+            {% if b.cost.resource_image %}
+              <img src="{{ b.cost.resource_image }}" alt="{{ b.cost.resource_name }}">
+            {% endif %}
+            <div style="display:flex; flex-direction:column; line-height:1.1;">
+              <span style="font-weight:800;">{{ b.cost.amount }}</span>
+              <span style="opacity:.85;">{{ b.cost.resource_name }}</span>
+            </div>
+          </div>
+        </div>
+          
+        <div class="heroes">
+          <h3>Héroes promocionales</h3>
+          <div class="hero-strip">
+            {% for h in b.promo_entries %}
+            <div class="hero-card" data-hero-id="{{ h.hero_id }}" data-hero-rarity="{{ h.rarity }}">
+              <div class="rarity-ring {% if h.rarity == 'legendary' %}rar-legendary{% elif h.rarity == 'epic' %}rar-epic{% elif h.rarity == 'rare' %}rar-rare{% else %}rar-common{% endif %}"></div>
+              <div class="hero-img">
+                <img src="{{ h.image|default:'/static/img/hero_placeholder.png' }}" alt="{{ h.name }}">
+              </div>
+              <div class="hero-info">
+                <div class="name">{{ h.name }}</div>
+                <div class="codename">{{ h.codename }}</div>
+              </div>
+            </div>
+            {% empty %}<div style="opacity:.75">Sin promocionales.</div>{% endfor %}
+          </div>
+
+          {% if b.normal_entries %}
+          <h3 style="margin-top:8px; opacity:.9">Héroes no promocionales</h3>
+          <div class="hero-strip">
+            {% for h in b.normal_entries %}
+            <div class="hero-card" data-hero-id="{{ h.hero_id }}" data-hero-rarity="{{ h.rarity }}">
+              <div class="rarity-ring {% if h.rarity == 'legendary' %}rar-legendary{% elif h.rarity == 'epic' %}rar-epic{% elif h.rarity == 'rare' %}rar-rare{% else %}rar-common{% endif %}"></div>
+              <div class="hero-img">
+                <img src="{{ h.image|default:'/static/img/hero_placeholder.png' }}" alt="{{ h.name }}">
+              </div>
+              <div class="hero-info">
+                <div class="name">{{ h.name }}</div>
+                <div class="codename">{{ h.codename }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="actions">
+            <button class="btn btn-primary pull-btn"
+                    data-banner-id="{{ b.id }}"
+                    data-can-afford="{{ b.cost.can_afford|yesno:'1,0' }}"
+                    {% if not b.cost.can_afford %}disabled title="Saldo insuficiente"{% endif %}>
+              Invocar ({{ b.cost.amount }} {{ b.cost.resource_name }})
+            </button>
+            <!-- botón x10 oculto por ahora -->
+          </div>
+        </div>
+
+        <div class="banner-bottom">
+          <div class="rewards">
+            <h4>Recompensas alternativas (si no sale héroe)</h4>
+            {% if b.rewards %}
+              <div class="reward-row">
+                {% for rw in b.rewards %}
+                  <div class="reward-badge">
+                    {{ rw.name }} —
+                    {% for it in rw.items %}
+                      {{ it.resource_name }} {{ it.min }}–{{ it.max }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div style="opacity:.8">No hay recompensas alternativas configuradas.</div>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% empty %}
+        <div style="opacity:.8">No hay banners activos.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap"><div class="toast" id="toast"></div></div>
+
+<script>
+  // ===== Helpers
+  function toggleTip(id){ const el = document.getElementById('tip-'+id); if(el) el.classList.toggle('show'); }
+  function toast(msg, isErr=true){
+    const t = document.getElementById('toast');
+    t.className = 'toast show' + (isErr ? ' err' : '');
+    t.textContent = msg;
+    setTimeout(()=>{ t.className='toast'; }, 4000);
+  }
+  function getCookie(name){
+    const m = document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)'); return m ? m.pop() : '';
+  }
+
+  // ===== Carrusel
+  (function(){
+    const slides = document.getElementById('slides');
+    const count = parseInt(document.getElementById('carousel').dataset.count || '0', 10);
+    let idx = 0;
+    function update(){
+      slides.style.transform = `translateX(-${idx*100}%)`;
+      document.getElementById('navPrev').style.opacity = (idx>0 ? 1 : .4);
+      document.getElementById('navNext').style.opacity = (idx<count-1 ? 1 : .4);
+    }
+    document.getElementById('navPrev')?.addEventListener('click', ()=>{ if(idx>0){ idx--; update(); }});
+    document.getElementById('navNext')?.addEventListener('click', ()=>{ if(idx<count-1){ idx++; update(); }});
+    update();
+  })();
+
+  // Build rarity lookup from hero cards (hero_id -> rarity)
+  const rarityByHeroId = {};
+  document.querySelectorAll('.hero-card').forEach(c=>{
+    rarityByHeroId[c.dataset.heroId] = c.dataset.heroRarity || 'common';
+  });
+
+  // ===== Pull handler (async + timeout 4s, no redirect)
+  document.querySelectorAll('.pull-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(btn.disabled) { toast('Saldo insuficiente para invocar.'); return; }
+
+      const bannerId = btn.dataset.bannerId;
+      const visual = document.getElementById('visual-'+bannerId);
+      const overlay = document.getElementById('overlay-'+bannerId);
+
+      btn.disabled = true;
+
+      // fetch with 4s timeout
+      const controller = new AbortController();
+      const to = setTimeout(()=>controller.abort(), 4000);
+      try{
+        const res = await fetch(`/api/pull/${bannerId}/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          body: new URLSearchParams({}),
+          signal: controller.signal
+        });
+        clearTimeout(to);
+
+        const data = await res.json();
+        if(!res.ok || !data.ok){
+          const detail = (data && (data.detail || data.error)) || 'Error desconocido';
+          toast(detail, true);
+          btn.disabled = false;
+          return;
+        }
+
+        // OK → lanzamos animación (color en base a rareza si hay héroe; reward si no)
+        let cls = 'reveal-reward';
+        if(data.result && data.result.type === 'hero'){
+          const rid = String(data.result.hero_id);
+          const rar = rarityByHeroId[rid] || 'common';
+          cls = 'reveal-' + rar;
+        }
+        overlay.className = 'reveal-overlay ' + cls;
+        visual.classList.remove('anim-flush'); // reset
+        void visual.offsetWidth;              // force reflow
+        visual.classList.add('anim-flush');
+
+        // Rehabilitar botón tras la animación (~900ms) — en prod actualizarías saldo por API/polling
+        setTimeout(()=>{ btn.disabled = false; }, 1200);
+
+      }catch(err){
+        clearTimeout(to);
+        toast(err.name === 'AbortError' ? 'La petición tardó demasiado (timeout).' : 'Fallo de red al invocar.');
+        btn.disabled = false;
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

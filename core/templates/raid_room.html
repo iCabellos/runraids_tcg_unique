@@ -1,0 +1,291 @@
+{% extends "layout.html" %}
+{% block title %}Raid{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h2>Raid</h2>
+
+  <div class="mb-3">
+    <div id="team-section" class="mb-2">
+      <h5>Tu equipo</h5>
+      <div id="team-cards" class="d-flex gap-2 flex-wrap"></div>
+      <button id="btn-team-create" class="btn btn-outline-light btn-sm mt-2">Crear equipo</button>
+    </div>
+  </div>
+
+  <div class="mb-3 d-flex align-items-center gap-3">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="mode-switch" checked>
+      <label class="form-check-label" for="mode-switch">Matchmaking</label>
+    </div>
+    <select id="hero-select" class="form-select" style="max-width:260px"></select>
+    <button id="btn-heal" class="btn btn-success">Curar</button>
+    <select id="raid-select" class="form-select" style="max-width:220px; display:none"></select>
+    <button id="btn-join" class="btn btn-primary">Buscar</button>
+  </div>
+  <div id="raid-ui" style="display:none">
+    <p>Room ID: <span id="room-id"></span></p>
+    <div class="row">
+      <div class="col-md-6">
+        <h5>Participantes</h5>
+        <ul id="participants"></ul>
+      </div>
+      <div class="col-md-6">
+        <h5>Enemigos</h5>
+        <ul id="enemies"></ul>
+      </div>
+    </div>
+    <div class="my-3">
+      <h5>Turno</h5>
+      <div id="turn-box"></div>
+    </div>
+    <div class="my-3">
+      <h5>Logs</h5>
+      <div id="logs" style="max-height:280px; overflow:auto; background:#111; color:#0f0; padding:8px;"></div>
+    </div>
+  </div>
+<!-- Modal crear equipo -->
+<div class="modal fade" id="teamModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear equipo (elige hasta 4)</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-heroes-grid" class="d-flex flex-wrap gap-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-team-save" type="button" class="btn btn-primary">Guardar equipo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+(function(){
+  const MODE = { matchmaking: 'matchmaking', solo: 'solo' };
+  let mode = MODE.matchmaking;
+  let roomId = null;
+  const btnJoin = document.getElementById('btn-join');
+  const btnHeal = document.getElementById('btn-heal');
+  const raidUI = document.getElementById('raid-ui');
+  const teamCards = document.getElementById('team-cards');
+  const btnTeamCreate = document.getElementById('btn-team-create');
+  const teamModalEl = document.getElementById('teamModal');
+  const modalHeroesGrid = document.getElementById('modal-heroes-grid');
+  const btnTeamSave = document.getElementById('btn-team-save');
+  let teamModal;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if (window.bootstrap) teamModal = new bootstrap.Modal(teamModalEl);
+  });
+  const roomSpan = document.getElementById('room-id');
+  const participantsUl = document.getElementById('participants');
+  const enemiesUl = document.getElementById('enemies');
+  const logsBox = document.getElementById('logs');
+  const turnBox = document.getElementById('turn-box');
+  const modeSwitch = document.getElementById('mode-switch');
+  const heroSelect = document.getElementById('hero-select');
+  const raidSelect = document.getElementById('raid-select');
+
+  function poll(){
+    if(!roomId) return;
+    fetch(`/api/raid/state/${roomId}/`).then(r=>r.json()).then(data=>{
+      if(!data.ok) return;
+      const s = data.state;
+      participantsUl.innerHTML = '';
+      s.participants.forEach(p=>{
+        const li = document.createElement('li');
+        li.textContent = `${p.member_name} - ${p.hero||'-'} HP:${p.hero_hp ?? '-'} ${p.alive?'':'(KO)'}`;
+        participantsUl.appendChild(li);
+      });
+      enemiesUl.innerHTML = '';
+      s.enemies.forEach(e=>{
+        const li = document.createElement('li');
+        li.textContent = `${e.name} HP:${e.hp}/${e.max_hp} ${e.alive?'':'(KO)'}`;
+        if (s.turn && s.turn.actor_type==='hero' && s.turn.member_id === window.MEMBER_ID && e.alive){
+          const btn = document.createElement('button');
+          btn.className='btn btn-sm btn-danger ms-2';
+          btn.textContent='Atacar';
+          btn.onclick = ()=>{
+            const fd = new FormData();
+            fd.append('room_id', roomId);
+            fd.append('target_enemy_id', e.id);
+            fetch('/api/raid/decision/', {method:'POST', body: fd}).then(r=>r.json()).then(_=>{});
+          };
+          li.appendChild(btn);
+        }
+        enemiesUl.appendChild(li);
+      });
+      logsBox.innerHTML = s.logs.map(l=>`[${l.ts}] ${l.action} ${l.actor?('(' + l.actor + ')'):''} ${JSON.stringify(l.payload||{})}`).join('<br>');
+      if(s.turn){
+        turnBox.textContent = `Turno ${s.turn.index}: ${s.turn.actor_type} ${s.turn.member_id?('#'+s.turn.member_id):''}`;
+      } else {
+        turnBox.textContent = '-';
+      }
+    }).catch(()=>{});
+  }
+
+  modeSwitch.addEventListener('change', ()=>{
+    mode = modeSwitch.checked ? MODE.matchmaking : MODE.solo;
+    document.querySelector("label[for='mode-switch']").textContent = mode === MODE.matchmaking ? 'Matchmaking' : 'Solo';
+    raidSelect.style.display = (mode === MODE.solo) ? 'block' : 'none';
+  });
+
+  function ensureJson(res){
+    const ct = res.headers.get('content-type') || '';
+    if(!ct.includes('application/json')){
+      return res.text().then(t=>{ throw new Error('Expected JSON, got: ' + ct + ' → ' + t.slice(0,120)); });
+    }
+    return res.json();
+  }
+
+  function populateHeroes(){
+    const heroes = (window.MY_HEROES || []);
+    heroSelect.innerHTML = '';
+    heroes.forEach(h=>{
+      const opt = document.createElement('option');
+      opt.value = h.id; opt.textContent = `${h.name} (HP:${h.hp}/${h.max_hp ?? ''})`;
+      heroSelect.appendChild(opt);
+    });
+    if(heroSelect.options.length>0) heroSelect.selectedIndex = 0;
+  }
+
+  function populateRaids(){
+    const raids = (window.AVAILABLE_RAIDS || []);
+    raidSelect.innerHTML = '';
+    raids.forEach(r=>{
+      const opt = document.createElement('option');
+      opt.value = r.id; opt.textContent = r.name;
+      raidSelect.appendChild(opt);
+    });
+  }
+
+  function hpColor(pct){ if(pct<=0) return '#000'; if(pct<0.10) return '#b71c1c'; if(pct<0.40) return '#ef6c00'; if(pct<0.50) return '#c0ca33'; return '#2e7d32'; }
+
+  function renderTeamCards(team){
+    teamCards.innerHTML = '';
+    if(!team || !team.slots || team.slots.length===0){
+      const p = document.createElement('p');
+      p.textContent = 'No tienes equipo.';
+      teamCards.appendChild(p);
+      return;
+    }
+    team.slots.forEach(s=>{
+      const ph = s; // contains same structure
+      const card = document.createElement('div');
+      card.className = 'position-relative';
+      card.style.width = '120px'; card.style.aspectRatio='3/4'; card.style.border='1px solid rgba(255,255,255,.2)'; card.style.borderRadius='10px'; card.style.overflow='hidden';
+      if(ph.image){
+        const img = document.createElement('img'); img.src = ph.image; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; card.appendChild(img);
+      } else {
+        const pholder = document.createElement('div'); pholder.style.width='100%'; pholder.style.height='100%'; pholder.style.display='grid'; pholder.style.placeItems='center'; pholder.style.background='#111'; pholder.textContent=ph.name; card.appendChild(pholder);
+      }
+      const bottom = document.createElement('div'); bottom.style.position='absolute'; bottom.style.left='0'; bottom.style.right='0'; bottom.style.bottom='0'; bottom.style.height='18px'; bottom.style.background='rgba(0,0,0,.6)';
+      const pct = Math.max(0, Math.min(1, (ph.hp||0)/(ph.max_hp||1)));
+      const bar = document.createElement('div'); bar.style.height='100%'; bar.style.width=(pct*100).toFixed(0)+'%'; bar.style.background=hpColor(pct);
+      bottom.appendChild(bar);
+      card.appendChild(bottom);
+      teamCards.appendChild(card);
+    });
+    // preselect first team hero for match/solo
+    const first = team.slots[0]; if(first){ heroSelect.value = String(first.id); }
+  }
+
+  async function fetchTeam(){
+    try{
+      const res = await fetch('/api/team/'); const data = await res.json();
+      if(!data.ok) return;
+      window.MY_HEROES = data.heroes || window.MY_HEROES;
+      populateHeroes();
+      renderTeamCards(data.team);
+    }catch(e){ /* ignore */ }
+  }
+
+  populateHeroes();
+  populateRaids();
+  fetchTeam();
+
+  btnHeal.addEventListener('click', ()=>{
+    const fd = new FormData();
+    fd.append('player_hero_id', heroSelect.value||'');
+    fetch('/api/hero/heal/', {method:'POST', body: fd})
+      .then(res=>res.json())
+      .then(data=>{
+        if(!data.ok){ alert('Error al curar: ' + (data.error||'')); return; }
+        // Refrescar etiquetas del selector mostrando nueva HP en el nombre (re-poblar)
+        // Pedimos de nuevo el estado de sala si hay una
+        if(roomId){ poll(); }
+      }).catch(err=> alert('Error: ' + err.message));
+  });
+
+  btnTeamCreate.addEventListener('click', async ()=>{
+    // open modal and show selectable heroes cards
+    modalHeroesGrid.innerHTML = '';
+    const available = (window.MY_HEROES||[]);
+    const selected = new Set();
+    available.forEach(h=>{
+      const tile = document.createElement('div');
+      tile.className = 'border p-1';
+      tile.style.width='110px'; tile.style.cursor='pointer';
+      const inner = document.createElement('div'); inner.className='position-relative'; inner.style.width='100%'; inner.style.aspectRatio='3/4'; inner.style.overflow='hidden'; inner.style.borderRadius='8px';
+      if(h.image){ const img=document.createElement('img'); img.src=h.image; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; inner.appendChild(img); }
+      const caption = document.createElement('div'); caption.className='small text-center mt-1'; caption.textContent=h.name; tile.appendChild(inner); tile.appendChild(caption);
+      tile.onclick = ()=>{
+        // prevent duplicate base hero in selection
+        const sameBase = Array.from(selected).map(id=>available.find(x=>String(x.id)===String(id))).some(x=>x && x.base_hero_id===h.base_hero_id);
+        if(!selected.has(String(h.id)) && (selected.size>=4 || sameBase)){
+          return; // ignore
+        }
+        if(selected.has(String(h.id))){ selected.delete(String(h.id)); tile.classList.remove('border-warning'); }
+        else { selected.add(String(h.id)); tile.classList.add('border-warning'); }
+      };
+      modalHeroesGrid.appendChild(tile);
+    });
+    btnTeamSave.onclick = async ()=>{
+      try{
+        await fetch('/api/team/create/', {method:'POST'});
+        for(const id of selected){
+          const fd = new FormData(); fd.append('player_hero_id', id);
+          await fetch('/api/team/add/', {method:'POST', body: fd});
+        }
+        await fetchTeam();
+        if(teamModal) teamModal.hide();
+      }catch(e){ alert('Error guardando equipo'); }
+    };
+    if(teamModal) teamModal.show();
+  });
+
+  btnJoin.addEventListener('click', ()=>{
+    const fd = new FormData();
+    fd.append('hero_id', heroSelect.value||'');
+    if(mode === MODE.matchmaking){
+      fetch('/api/raid/matchmaking/join/', {method:'POST', body: fd})
+        .then(ensureJson)
+        .then(data=>{
+          if(!data.ok) return alert('Error al entrar: ' + (data.error||''));
+          roomId = data.room_id; roomSpan.textContent = roomId; raidUI.style.display='block';
+          poll();
+          if(!window.__raid_interval){ window.__raid_interval = setInterval(poll, 1000); }
+        }).catch(err=> alert('Error: ' + err.message));
+    } else {
+      fd.append('raid_type_id', raidSelect.value||'');
+      fetch('/api/raid/solo/start/', {method:'POST', body: fd})
+        .then(ensureJson)
+        .then(data=>{
+          if(!data.ok) return alert('Error al crear raid: ' + (data.error||''));
+          roomId = data.room_id; roomSpan.textContent = roomId; raidUI.style.display='block';
+          poll();
+          if(!window.__raid_interval){ window.__raid_interval = setInterval(poll, 1000); }
+        }).catch(err=> alert('Error: ' + err.message));
+    }
+  });
+})();
+</script>
+<script>
+  // Exponer el member id actual + datos auxiliares
+  window.MEMBER_ID = {{ request.session.member_id|default:'null' }};
+  window.MY_HEROES = {{ my_heroes_data|safe }};
+  window.AVAILABLE_RAIDS = {{ available_raids_data|safe }};
+</script>
+{% endblock %}

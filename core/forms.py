@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.hashers import check_password
-from core.models import Member, Ability, Alliance, AllianceSettings
-from core.models import BuildingLevelCost, PlayerResource, PlayerBuilding
+from django.core.exceptions import ValidationError
+from core.models import BuildingLevelCost, PlayerResource, PlayerBuilding, Banner, Member
 
 
 class MemberLoginForm(forms.Form):
@@ -28,20 +28,7 @@ class MemberLoginForm(forms.Form):
 
 
 class CombatActionForm(forms.Form):
-    ability_id = forms.ChoiceField(
-        widget=forms.RadioSelect,
-        label=""
-    )
-
-    def __init__(self, *args, **kwargs):
-        hero = kwargs.pop("hero", None)
-        super().__init__(*args, **kwargs)
-
-        if hero:
-            self.fields["ability_id"].choices = [
-                (ability.id, f"{ability.name} ({ability.type}, poder {ability.power})")
-                for ability in hero.hero.abilities.all()
-            ]
+    pass
 
 
 # forms.py
@@ -89,3 +76,37 @@ class UpgradeBuildingForm(forms.Form):
         building.level += 1
         building.save()
         return building
+
+class PullForm(forms.Form):
+    banner_id = forms.IntegerField(widget=forms.HiddenInput())
+    count = forms.IntegerField(
+        min_value=1, max_value=10, initial=1,
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": 1})
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.member = kwargs.pop('member', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        banner_id = cleaned.get("banner_id")
+        count = cleaned.get("count") or 1
+
+        try:
+            banner = Banner.objects.select_related("cost_resource").get(pk=banner_id, is_active=True)
+        except Banner.DoesNotExist:
+            raise ValidationError("El banner no existe o no está activo.")
+
+        if not self.member:
+            raise ValidationError("Sesión inválida.")
+
+        # Validación suave de saldo (la validación/descarga real es transaccional en el servicio)
+        total_cost = int(banner.cost_amount) * int(count)
+        pr = PlayerResource.objects.filter(member=self.member, resource_type=banner.cost_resource).first()
+        if not pr or pr.amount < total_cost:
+            raise ValidationError(f"Saldo insuficiente de {banner.cost_resource.name}. Necesitas {total_cost}.")
+
+        cleaned["banner"] = banner
+        cleaned["total_cost"] = total_cost
+        return cleaned
