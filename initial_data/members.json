@@ -1,7 +1,7 @@
 [
   {
-    "name": "Ivan",
-    "firstname": "Cabellos",
+    "name": "Cabellos",
+    "firstname": "Ivan",
     "email": "ivan@example.com",
     "phone": 600000001,
     "password": "test1234",
@@ -9,7 +9,7 @@
     "heroes": ["Novato"]
   },
   {
-    "name": "Alex",
+    "name": "Doe",
     "firstname": "John",
     "email": "john@example.com",
     "phone": 600000002,
@@ -27,7 +27,7 @@
     "heroes": ["Novato"]
   },
   {
-    "name": "Doe",
+    "name": "Pepe",
     "firstname": "John",
     "email": "john@example.com",
     "phone": 600000004,

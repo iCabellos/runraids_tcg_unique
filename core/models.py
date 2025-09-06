@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.contrib.auth.hashers import make_password
 from django.utils.timezone import now
 from django.db.models import F, Value
+import math
 
 
 # =============================================================
@@ -520,7 +521,6 @@ class PlayerHero(models.Model):
     current_hp = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(default=now)
-
     class Meta:
         unique_together = ('member', 'hero')
 
@@ -683,6 +683,7 @@ class Enemy(models.Model):
 
     def __str__(self):
         return f'{self.name} (lvl {self.level})'
+<<<<<<< HEAD
 
 
 # =============================================================

@@ -25,6 +25,7 @@ from core.models import (
     RaidEnemy,
     RaidRoom,
     Team,
+    HeroSkill
 )
 
 
