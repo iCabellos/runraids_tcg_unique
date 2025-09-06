@@ -218,8 +218,11 @@ MEDIA_URL = '/media/'
 # In Vercel serverless runtime, the filesystem is read-only; use /tmp for uploads
 if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
     MEDIA_ROOT = '/tmp/media'
+    # For Vercel, we'll serve game assets from static files instead
+    USE_STATIC_FOR_GAME_ASSETS = True
 else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'core', 'media')
+    USE_STATIC_FOR_GAME_ASSETS = False
 
 # Whitenoise configuration for serving static files
 # On Vercel, serve directly from finders to avoid relying on collectstatic outputs from a separate build step
