@@ -16,6 +16,7 @@ from core.models import (
     AllianceSettings,
     AllianceBuilding,
     Friendship,
+    HeroSkill,
     Banner,
     BannerEntry,
     BannerReward,
@@ -24,8 +25,7 @@ from core.models import (
     RaidWave,
     RaidEnemy,
     RaidRoom,
-    Team,
-    HeroSkill
+    Team
 )
 
 
