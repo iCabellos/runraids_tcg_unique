@@ -250,8 +250,13 @@
             <p>Costes para subir al nivel {{ building.level|add:1 }}:</p>
             <ul>
               {% for cost in building.upgrade_costs %}
-                <li><img src="{{ cost.resource_type.image.url }}" alt="{{ cost.resource_type.name }}"
-                         style="width:40px;height:40px;object-fit:contain;"/> {{ cost.amount }}</li>
+                <li>
+                  {% if cost.resource_type.image_url %}
+                    <img src="{{ cost.resource_type.image_url }}" alt="{{ cost.resource_type.name }}"
+                         style="width:40px;height:40px;object-fit:contain;"/>
+                  {% endif %}
+                  {{ cost.amount }}
+                </li>
               {% endfor %}
             </ul>
             {% if building.can_upgrade %}

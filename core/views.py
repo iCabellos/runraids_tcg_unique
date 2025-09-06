@@ -185,7 +185,16 @@ class CampView(MemberRequiredMixin, TemplateView):
                 "image": building.building_type.get_image_url(),
                 "can_upgrade": can_upgrade,
                 "is_max_level": is_max_level,
-                "upgrade_costs": list(costs),
+                "upgrade_costs": [
+                    {
+                        "resource_type": {
+                            "name": cost.resource_type.name,
+                            "image_url": cost.resource_type.get_image_url(),
+                        },
+                        "amount": cost.amount,
+                    }
+                    for cost in costs
+                ],
             })
 
         context.update({
