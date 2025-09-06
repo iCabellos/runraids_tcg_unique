@@ -146,9 +146,19 @@ class Command(BaseCommand):
         self.stdout.write('Loading resource types...')
         for resource_data in data.get('resource_types', []):
             resource_data.pop('pk', None)
+
+            # Process image path for static files
+            defaults = {'description': resource_data.get('description', '')}
+            if 'image' in resource_data and resource_data['image']:
+                # Si es una ruta estática (empieza con img/), usar static_image_path
+                if str(resource_data['image']).startswith('img/'):
+                    defaults['static_image_path'] = resource_data['image']
+                else:
+                    defaults['image'] = resource_data['image']
+
             resource_type, created = ResourceType.objects.get_or_create(
                 name=resource_data['name'],
-                defaults={'description': resource_data.get('description', '')}
+                defaults=defaults
             )
             if created:
                 self.stdout.write(f'Created resource type: {resource_type.name}')
