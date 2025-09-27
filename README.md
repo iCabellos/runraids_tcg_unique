@@ -101,12 +101,14 @@ Un juego de cartas coleccionables (TCG) desarrollado con Django, diseñado para 
 
 ## 📅 Roadmap a Corto Plazo (v0.1 MVP)
 
-- [ ] Sistema básico de ciudad y recursos
-- [ ] Vista de héroes y stats
-- [ ] Primer raid funcional en frontend
-- [ ] Algoritmo de combate en backend
+- [X] Sistema básico de ciudad y recursos
+- [ ] Vista de héroes y stats en el modal de la vista del campamento principal.
+- [X] Primer raid funcional en frontend
+- [X] Algoritmo de combate en backend
 - [ ] Balance inicial de héroes e ítems
 - [ ] Primera versión de arte estático para UI y héroes
+- [ ] Sistema gacha desde el edificio del 'retrete'
+- [ ] Fix de pequeños bugs y mejoras
 
 ---
 
